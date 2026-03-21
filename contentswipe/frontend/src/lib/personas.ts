@@ -103,6 +103,8 @@ export const PERSONAS: Persona[] = [
     id: "pokemon-infomercial",
     name: "Pokemon Infomercial",
     description: "Ultra-serious dramatic infomercials treating Pokemon as premium products",
+    videoType: "Retro infomercial parody — dead-serious tone selling fictional creatures as real consumer products",
+    targetDemographic: "Pokemon fans, nostalgia-driven millennials 25–38, meme culture, YouTube / TikTok comedy audiences.",
     icon: "gamepad",
     color: "#f59e0b",
     contentTypes: ["video"],
@@ -115,6 +117,8 @@ export const PERSONAS: Persona[] = [
     id: "coffee-roastery",
     name: "Coffee Roastery",
     description: "LinkedIn-style thought leadership and product content for artisan coffee brands",
+    videoType: "Product showcase / lifestyle reel — smooth transitions, warm tones, morning ritual energy",
+    targetDemographic: "Coffee enthusiasts, specialty-brew buyers 25–45, Instagram and TikTok foodies, lifestyle-driven shoppers.",
     icon: "coffee",
     color: "#92400e",
     contentTypes: ["video"],
@@ -158,6 +162,8 @@ export function createBlankPersona(): Persona {
     id: `persona-${Date.now()}`,
     name: "New Persona",
     description: "Describe this persona's purpose",
+    videoType: "",
+    targetDemographic: "",
     icon: "user",
     color: "#6366f1",
     contentTypes: ["video"],
@@ -178,6 +184,8 @@ function hydratePersona(base: Persona, stored: Record<string, unknown>): Persona
 
   if (typeof stored.name === "string") next.name = stored.name;
   if (typeof stored.description === "string") next.description = stored.description;
+  if (typeof stored.videoType === "string") next.videoType = stored.videoType;
+  if (typeof stored.targetDemographic === "string") next.targetDemographic = stored.targetDemographic;
   if (typeof stored.color === "string") next.color = stored.color;
 
   if (

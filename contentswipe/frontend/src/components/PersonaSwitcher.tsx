@@ -43,21 +43,16 @@ export function PersonaSwitcher({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((value) => !value)}
-        className="surface-pill flex items-center gap-3 rounded-[22px] px-4 py-3 text-left transition-colors hover:bg-white"
+        className="flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/78 px-3 py-1.5 text-left transition-colors hover:bg-white"
       >
         <div
-          className="flex h-10 w-10 items-center justify-center rounded-2xl"
+          className="flex h-6 w-6 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${current.color}18` }}
         >
-          <Icon className="h-4 w-4" style={{ color: current.color }} />
+          <Icon className="h-3 w-3" style={{ color: current.color }} />
         </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-900">{current.name}</p>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-            Persona Mode
-          </p>
-        </div>
-        <ChevronDown className="ml-1 h-3.5 w-3.5 text-slate-400" />
+        <span className="text-xs font-semibold text-slate-900">{current.name}</span>
+        <ChevronDown className="h-3 w-3 text-slate-400" />
       </button>
 
       {open && (

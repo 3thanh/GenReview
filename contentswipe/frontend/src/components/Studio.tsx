@@ -16,6 +16,14 @@ import {
   Palette,
   LayoutGrid,
   Zap,
+  Plane,
+  Building2,
+  Gamepad2,
+  Coffee,
+  User,
+  Users,
+  FileText,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useGenerationJobs } from "../hooks/useFeed";
@@ -199,7 +207,16 @@ const TARGET_USE_OPTIONS: Array<{ value: TargetUse; label: string; desc: string 
   { value: "entertainment", label: "Entertainment", desc: "Comedy, memes, viral content" },
 ];
 
-function composeVideoPrompt(userPrompt: string, config: VideoConfig): string {
+interface PersonaContext {
+  videoType: string;
+  targetDemographic: string;
+}
+
+function composeVideoPrompt(
+  userPrompt: string,
+  config: VideoConfig,
+  persona?: PersonaContext
+): string {
   const styleLookup: Record<VisualStyle, string> = {
     cinematic_cgi:
       "high-quality cinematic CGI render, stylized 3D characters with slightly exaggerated proportions, dramatic volumetric lighting, rich color grading",
@@ -240,6 +257,10 @@ function composeVideoPrompt(userPrompt: string, config: VideoConfig): string {
   };
 
   const parts = [
+    persona?.videoType ? `Video Type: ${persona.videoType}` : "",
+    persona?.targetDemographic ? `Target Demographic: ${persona.targetDemographic}` : "",
+    "",
+    "─── SCRIPT OUTLINE ───",
     userPrompt,
     "",
     "─── VIDEO CONFIGURATION ───",
@@ -267,11 +288,21 @@ const PERSONA_ICON_OPTIONS: Array<{
 }> = [
   { value: "video", label: "Video", icon: Video },
   { value: "layers", label: "Everything", icon: Layers },
+  { value: "plane", label: "Airplane", icon: Plane },
+  { value: "building", label: "Building", icon: Building2 },
+  { value: "gamepad", label: "Gamepad", icon: Gamepad2 },
+  { value: "coffee", label: "Coffee", icon: Coffee },
+  { value: "user", label: "Custom", icon: User },
 ];
 
 const PERSONA_ICONS: Record<Persona["icon"], typeof Layers> = {
   video: Video,
   layers: Layers,
+  plane: Plane,
+  building: Building2,
+  gamepad: Gamepad2,
+  coffee: Coffee,
+  user: User,
 };
 
 const SWIPE_DIRECTIONS: SwipeDirection[] = ["left", "right", "up", "down"];
@@ -518,9 +549,15 @@ export function Studio({
     if (!input.trim() || generating || !activeSession || !businessId) return;
 
     const userPrompt = input.trim();
+    const personaContext = activePersona
+      ? {
+          videoType: activePersona.videoType,
+          targetDemographic: activePersona.targetDemographic,
+        }
+      : undefined;
     const enrichedPrompt =
       contentType === "video"
-        ? composeVideoPrompt(userPrompt, videoConfig)
+        ? composeVideoPrompt(userPrompt, videoConfig, personaContext)
         : userPrompt;
 
     setInput("");
@@ -534,6 +571,7 @@ export function Studio({
         body_text: userPrompt,
         business_id: businessId,
         session_id: activeSession.id,
+        persona_id: activePersona?.id ?? null,
         content_type: contentType,
         channel: DEFAULT_CHANNEL_BY_TYPE[contentType] ?? "tiktok",
         review_mode: contentType,
@@ -639,9 +677,17 @@ export function Studio({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
                   Personas
                 </p>
-                <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-slate-400">
-                  Prebuilt
-                </span>
+                <button
+                  onClick={() => {
+                    const newPersona = createBlankPersona();
+                    onPersonasChange([...personas, newPersona]);
+                    onSelectPersona(newPersona.id);
+                  }}
+                  className="flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
+                >
+                  <Plus className="h-3 w-3" />
+                  New
+                </button>
               </div>
 
               <div className="space-y-2">
@@ -660,11 +706,30 @@ export function Studio({
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 rounded-xl p-2 ${isActive ? "bg-white/10" : "bg-slate-100"}`}>
-                          <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-500"}`} />
+                        <div
+                          className="mt-0.5 rounded-xl p-2"
+                          style={{
+                            backgroundColor: isActive ? "rgba(255,255,255,0.12)" : `${persona.color}15`,
+                          }}
+                        >
+                          <Icon
+                            className="h-4 w-4"
+                            style={{ color: isActive ? "white" : persona.color }}
+                          />
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{persona.name}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-sm font-medium">{persona.name}</p>
+                            {persona.builtin && (
+                              <span
+                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider ${
+                                  isActive ? "bg-white/15 text-white/60" : "bg-slate-100 text-slate-400"
+                                }`}
+                              >
+                                Built-in
+                              </span>
+                            )}
+                          </div>
                           <p className={`mt-1 text-xs leading-5 ${isActive ? "text-white/70" : "text-slate-500"}`}>
                             {persona.description}
                           </p>
@@ -907,6 +972,49 @@ export function Studio({
                     className="surface-input w-full rounded-2xl px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-sky-300"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Tag Color
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={activePersona.color}
+                      onChange={(event) =>
+                        updatePersona(activePersona.id, (persona) => ({
+                          ...persona,
+                          color: event.target.value,
+                        }))
+                      }
+                      className="h-9 w-12 cursor-pointer rounded-xl border border-slate-200 bg-transparent"
+                    />
+                    <div
+                      className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold"
+                      style={{
+                        color: activePersona.color,
+                        borderColor: `${activePersona.color}40`,
+                        backgroundColor: `${activePersona.color}12`,
+                      }}
+                    >
+                      {activePersona.name}
+                    </div>
+                  </div>
+                </div>
+
+                {!activePersona.builtin && (
+                  <button
+                    onClick={() => {
+                      const next = personas.filter((p) => p.id !== activePersona.id);
+                      onPersonasChange(next);
+                      onSelectPersona(next[0]?.id ?? "");
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-100"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Persona
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -985,48 +1093,70 @@ export function Studio({
 
         <div className="border-t border-slate-200/80 bg-white/44 px-6 py-4 backdrop-blur-xl">
           {activePersona && (
-            <div className="surface-card mb-3 rounded-[26px] px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Active Persona
-              </p>
-              <div className="mt-1 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{activePersona.name}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">
-                    {activePersona.description}
-                  </p>
+            <div className="mb-3 overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/60 backdrop-blur-md">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/60">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: activePersona.color + "18" }}
+                  >
+                    <Video className="h-3.5 w-3.5" style={{ color: activePersona.color }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{activePersona.name}</p>
+                    <p className="text-[10px] text-slate-400">{activePersona.description}</p>
+                  </div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-1.5">
-                  {activePersona.contentTypes.map((type) => (
-                    <span
-                      key={type}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500"
-                    >
-                      {type}
-                    </span>
-                  ))}
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                  Persona
+                </span>
+              </div>
+
+              <div className="space-y-3 px-4 py-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Film className="h-3 w-3 text-blue-500" />
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      Video Type
+                    </label>
+                  </div>
+                  <textarea
+                    value={activePersona.videoType}
+                    onChange={(e) =>
+                      updatePersona(activePersona.id, (p) => ({
+                        ...p,
+                        videoType: e.target.value,
+                      }))
+                    }
+                    rows={2}
+                    placeholder="e.g., Stylized 3D comedy skit, product showcase reel, event promo ad..."
+                    className="surface-input w-full resize-none rounded-2xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition-colors focus:border-sky-300"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-3 w-3 text-emerald-500" />
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      Target Demographic
+                    </label>
+                  </div>
+                  <textarea
+                    value={activePersona.targetDemographic}
+                    onChange={(e) =>
+                      updatePersona(activePersona.id, (p) => ({
+                        ...p,
+                        targetDemographic: e.target.value,
+                      }))
+                    }
+                    rows={2}
+                    placeholder="e.g., AI/tech Twitter, developers 18-35, TikTok & Reels audiences..."
+                    className="surface-input w-full resize-none rounded-2xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 outline-none transition-colors focus:border-sky-300"
+                  />
                 </div>
               </div>
             </div>
           )}
-
-          <div className="mb-3 flex items-center gap-2">
-            {TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                onClick={() => setContentType(value)}
-                disabled={!activePersona?.contentTypes.includes(value)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-all ${
-                  contentType === value
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-white/72 text-slate-500 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-35"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            ))}
-          </div>
 
           {contentType === "video" && (
             <div className="mb-3 overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/60 backdrop-blur-md">
@@ -1377,15 +1507,25 @@ export function Studio({
           )}
 
           <div className="flex items-end gap-3">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Describe the content you want to generate..."
-              rows={2}
-              className="surface-input flex-1 resize-none rounded-[24px] px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-sky-300 focus:outline-none"
-            />
+            <div className="flex-1 relative">
+              <div className="absolute left-3.5 top-3 flex items-center gap-1.5 pointer-events-none">
+                <FileText className="h-3.5 w-3.5 text-slate-400" />
+                {!input.trim() && (
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    Script Outline
+                  </span>
+                )}
+              </div>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Outline the key beats, scenes, or information for the video..."
+                rows={3}
+                className="surface-input w-full resize-none rounded-[24px] pl-4 pr-4 pt-8 pb-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-sky-300 focus:outline-none"
+              />
+            </div>
             <button
               onClick={() => {
                 void handleGenerate();

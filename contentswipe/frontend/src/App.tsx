@@ -113,7 +113,23 @@ export default function App() {
   return (
     <div className="min-h-screen px-3 py-3 text-slate-900 sm:px-5 sm:py-5 lg:px-6">
       <div className="app-shell mx-auto max-w-[1680px] rounded-[34px]">
-        <Navbar activeView={view} onNavigate={setView} />
+        <Navbar
+          activeView={view}
+          onNavigate={setView}
+          feedContext={
+            view === "feed"
+              ? {
+                  personas,
+                  activePersona:
+                    personas.find((p) => p.id === activePersonaId) ?? personas[0],
+                  feedSourceMode,
+                  onChangeFeedSourceMode: handleFeedSourceModeChange,
+                  onSelectPersona: handleSelectPersona,
+                  stats: feedStats,
+                }
+              : undefined
+          }
+        />
         {view === "feed" ? (
           <SwipeFeed
             personas={personas}
@@ -122,6 +138,7 @@ export default function App() {
             onChangeFeedSourceMode={handleFeedSourceModeChange}
             onSelectPersona={handleSelectPersona}
             onNavigateToStudio={() => setView("studio")}
+            onStatsChange={handleStatsChange}
           />
         ) : (
           <Studio
