@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { Star } from "lucide-react";
 import type { ContentItem } from "../types/database";
 import { VideoCard } from "./VideoCard";
+import type { VideoCardHandle } from "./VideoCard";
 import { SocialCard } from "./SocialCard";
 import { SupportCard } from "./SupportCard";
 import type { SupportCardHandle } from "./SupportCard";
@@ -10,10 +11,11 @@ interface ContentCardProps {
   card: ContentItem;
   isPlaying: boolean;
   onTogglePlay: () => void;
+  videoRef?: React.Ref<VideoCardHandle>;
 }
 
 export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
-  function ContentCard({ card, isPlaying, onTogglePlay }, ref) {
+  function ContentCard({ card, isPlaying, onTogglePlay, videoRef }, ref) {
     const typeLabel = {
       video: "Video",
       social: "Social",
@@ -62,7 +64,12 @@ export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
 
           {/* Card content by type */}
           {card.content_type === "video" && (
-            <VideoCard card={card} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
+            <VideoCard
+              ref={videoRef}
+              card={card}
+              isPlaying={isPlaying}
+              onTogglePlay={onTogglePlay}
+            />
           )}
           {card.content_type === "social" && <SocialCard card={card} />}
           {card.content_type === "support" && <SupportCard ref={ref} card={card} />}

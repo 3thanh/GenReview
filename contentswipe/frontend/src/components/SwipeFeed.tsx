@@ -9,6 +9,7 @@ import { FeedbackDrawer } from "./FeedbackDrawer";
 import { EmptyState } from "./EmptyState";
 import { PersonaSwitcher } from "./PersonaSwitcher";
 import type { SupportCardHandle } from "./SupportCard";
+import type { VideoCardHandle } from "./VideoCard";
 import type { Persona, SwipeDirection } from "../types/database";
 import { PERSONAS } from "../types/database";
 
@@ -35,6 +36,12 @@ const SWIPE_VARIANTS = {
   },
 };
 
+function formatTimestamp(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
   const [persona, setPersona] = useState<Persona>(PERSONAS[0]);
   const { cards, currentCard, loading, stats, canUndo, queueLength, swipe, undo } =
@@ -42,14 +49,27 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingDirection, setPendingDirection] = useState<SwipeDirection | null>(null);
-  const [initialText, setInitialText] = useState("");
   const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [swiping, setSwiping] = useState(false);
+  const [videoTimestamp, setVideoTimestamp] = useState<number | null>(null);
 
   const supportCardRef = useRef<SupportCardHandle>(null);
+  const videoCardRef = useRef<VideoCardHandle>(null);
 
   const isSupport = currentCard?.content_type === "support";
+  const isVideo = currentCard?.content_type === "video";
+
+  const captureVideoTimestamp = useCallback(() => {
+    if (!isVideo) {
+      setVideoTimestamp(null);
+      return;
+    }
+    const time = videoCardRef.current?.getCurrentTime() ?? null;
+    setVideoTimestamp(time);
+    videoCardRef.current?.pause();
+    if (isPlaying) setIsPlaying(false);
+  }, [isVideo, isPlaying]);
 
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {
@@ -63,6 +83,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
       const label = persona.swipeLabels[direction];
 
       if (label.requiresFeedback) {
+        captureVideoTimestamp();
         setPendingDirection(direction);
         setDrawerOpen(true);
         return;
@@ -76,7 +97,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         setExitDirection(null);
       }, 250);
     },
-    [currentCard, swiping, persona, swipe, isSupport]
+    [currentCard, swiping, persona, swipe, isSupport, captureVideoTimestamp]
   );
 
   const handleScrollChat = useCallback(
@@ -90,32 +111,37 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
     (feedback: string) => {
       if (!pendingDirection) return;
       setDrawerOpen(false);
-      setInitialText("");
+
+      let finalFeedback = feedback;
+      if (videoTimestamp !== null && isVideo) {
+        finalFeedback = `[@${formatTimestamp(videoTimestamp)}] ${feedback}`;
+      }
 
       setSwiping(true);
       setExitDirection(pendingDirection);
       setTimeout(() => {
-        swipe(pendingDirection, feedback);
+        swipe(pendingDirection, finalFeedback);
         setSwiping(false);
         setExitDirection(null);
         setPendingDirection(null);
+        setVideoTimestamp(null);
       }, 250);
     },
-    [pendingDirection, swipe]
+    [pendingDirection, swipe, videoTimestamp, isVideo]
   );
 
   const handleFeedbackCancel = useCallback(() => {
     setDrawerOpen(false);
     setPendingDirection(null);
-    setInitialText("");
+    setVideoTimestamp(null);
   }, []);
 
-  const handleStartTyping = useCallback((key: string) => {
+  const handleStartTyping = useCallback(() => {
     if (!currentCard || drawerOpen) return;
+    captureVideoTimestamp();
     setPendingDirection("left");
-    setInitialText(key);
     setDrawerOpen(true);
-  }, [currentCard, drawerOpen]);
+  }, [currentCard, drawerOpen, captureVideoTimestamp]);
 
   const handleTogglePlay = useCallback(() => {
     setIsPlaying((p) => !p);
@@ -170,6 +196,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
               >
                 <ContentCard
                   ref={supportCardRef}
+                  videoRef={videoCardRef}
                   card={currentCard}
                   isPlaying={isPlaying}
                   onTogglePlay={handleTogglePlay}
@@ -197,7 +224,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         open={drawerOpen}
         direction={pendingDirection}
         persona={persona}
-        initialText={initialText}
+        videoTimestamp={videoTimestamp}
         onSubmit={handleFeedbackSubmit}
         onCancel={handleFeedbackCancel}
       />

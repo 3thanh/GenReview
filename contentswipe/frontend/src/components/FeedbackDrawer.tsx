@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Send } from "lucide-react";
+import { X, Send, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { SwipeDirection, Persona } from "../types/database";
 
@@ -7,16 +7,22 @@ interface FeedbackDrawerProps {
   open: boolean;
   direction: SwipeDirection | null;
   persona: Persona;
-  initialText?: string;
+  videoTimestamp?: number | null;
   onSubmit: (feedback: string) => void;
   onCancel: () => void;
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export function FeedbackDrawer({
   open,
   direction,
   persona,
-  initialText = "",
+  videoTimestamp,
   onSubmit,
   onCancel,
 }: FeedbackDrawerProps) {
@@ -25,18 +31,13 @@ export function FeedbackDrawer({
 
   useEffect(() => {
     if (open) {
-      setText(initialText);
-      setTimeout(() => {
-        const el = inputRef.current;
-        if (el) {
-          el.focus();
-          el.setSelectionRange(el.value.length, el.value.length);
-        }
-      }, 100);
+      setText("");
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open, initialText]);
+  }, [open]);
 
   const label = direction ? persona.swipeLabels[direction] : null;
+  const hasTimestamp = videoTimestamp !== null && videoTimestamp !== undefined;
 
   const handleSubmit = () => {
     if (!text.trim() && label?.requiresFeedback) return;
@@ -95,6 +96,17 @@ export function FeedbackDrawer({
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Video timestamp badge */}
+            {hasTimestamp && (
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <Clock className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-xs text-purple-300 font-medium">
+                  Commenting at{" "}
+                  <span className="font-mono">{formatTime(videoTimestamp)}</span>
+                </span>
+              </div>
+            )}
 
             {/* Input */}
             <textarea
