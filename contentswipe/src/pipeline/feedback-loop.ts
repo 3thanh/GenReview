@@ -132,6 +132,59 @@ async function handleBrainstormRequest(item: ContentItem): Promise<void> {
   console.log(`  Created brainstorm item ${newItem.id} + generation job`);
 }
 
+async function handleFurtherReviewRequest(item: ContentItem): Promise<void> {
+  console.log(`  Processing further review request for item: ${item.title}`);
+
+  const business =
+    (await getBusiness(item.business_id)) ?? fallbackBusiness();
+
+  const prompt = [
+    `Create a revised version of this ${item.content_type} for ${business.name} that addresses the reviewer's feedback.`,
+    item.script ? `\nOriginal script:\n${item.script}` : "",
+    item.body_text ? `\nOriginal text:\n${item.body_text}` : "",
+    `\nReviewer feedback: ${item.review_note ?? "Needs another version for further review"}`,
+    `\nBusiness context: ${business.description ?? ""}`,
+    item.channel ? `\nChannel: ${item.channel}` : "",
+  ].join("");
+
+  const { data: newItem, error: insertErr } = await supabase
+    .from("content_items")
+    .insert({
+      title: `${item.title} (v2)`,
+      body_text: item.body_text,
+      content_type: item.content_type,
+      channel: item.channel,
+      review_mode: item.review_mode,
+      source_type: item.source_type,
+      parent_id: item.id,
+      business_id: item.business_id,
+      session_id: item.session_id,
+      review_status: "pending",
+      prompt_input_summary: item.review_note ?? "Sent for further review",
+    })
+    .select()
+    .single();
+
+  if (insertErr || !newItem) {
+    console.error(`  Failed to create further review item: ${insertErr?.message}`);
+    return;
+  }
+
+  const { error: jobErr } = await supabase.from("generation_jobs").insert({
+    content_item_id: newItem.id,
+    source_card_id: item.id,
+    job_type: "further_review",
+    prompt,
+  });
+
+  if (jobErr) {
+    console.error(`  Failed to create generation job: ${jobErr.message}`);
+    return;
+  }
+
+  console.log(`  Created further review item ${newItem.id} + generation job`);
+}
+
 async function processActionableItems(): Promise<number> {
   const { data: items, error } = await supabase
     .from("content_items")
@@ -145,7 +198,9 @@ async function processActionableItems(): Promise<number> {
 
   for (const item of items) {
     try {
-      if (item.variant_of || item.review_note?.toLowerCase().includes("variant")) {
+      if (item.down_arrow_designation === "further_review") {
+        await handleFurtherReviewRequest(item);
+      } else if (item.variant_of || item.review_note?.toLowerCase().includes("variant")) {
         await handleVariantRequest(item);
       } else {
         await handleBrainstormRequest(item);
@@ -187,6 +242,7 @@ export {
   processActionableItems,
   handleVariantRequest,
   handleBrainstormRequest,
+  handleFurtherReviewRequest,
 };
 
 runFeedbackLoop().catch((err) => {

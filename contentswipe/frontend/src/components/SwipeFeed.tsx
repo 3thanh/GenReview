@@ -54,8 +54,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
     (direction: SwipeDirection) => {
       if (!currentCard || swiping) return;
 
-      // For support cards, up/down scroll the chat — don't trigger swipe
-      if (isSupport && (direction === "up" || direction === "down")) {
+      if (isSupport && direction === "up") {
         supportCardRef.current?.scrollChat(direction);
         return;
       }
@@ -205,15 +204,18 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
             <>
               <span>← reject</span>
               <span>→ approve</span>
-              <span>↑ ↓ scroll chat</span>
+              <span>↑ scroll chat</span>
+              <span>↓ send for review</span>
               <span>⌘Z undo</span>
             </>
           ) : (
             <>
-              <span>← → ↑ ↓ swipe</span>
+              <span>← reject</span>
+              <span>→ approve</span>
+              <span>↑ variant</span>
+              <span>↓ send for review</span>
               <span>Space play/pause</span>
               <span>⌘Z undo</span>
-              <span>Type to add notes</span>
             </>
           )}
         </div>

@@ -22,7 +22,7 @@ interface SessionStats {
   approved: number;
   rejected: number;
   variants: number;
-  starred: number;
+  sentForReview: number;
   undos: number;
 }
 
@@ -50,7 +50,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
     approved: 0,
     rejected: 0,
     variants: 0,
-    starred: 0,
+    sentForReview: 0,
     undos: 0,
   });
 
@@ -95,7 +95,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
   useEffect(() => {
     seenIds.current.clear();
     undoStack.current = [];
-    setStats({ totalSwiped: 0, approved: 0, rejected: 0, variants: 0, starred: 0, undos: 0 });
+    setStats({ totalSwiped: 0, approved: 0, rejected: 0, variants: 0, sentForReview: 0, undos: 0 });
     fetchCards();
   }, [fetchCards]);
 
@@ -235,24 +235,32 @@ export function useFeed(persona: Persona): UseFeedReturn {
             }));
             return prev.slice(1);
 
-          case "down": {
-            const newStarred = !card.starred;
+          case "down":
+            update.review_status = "needs_edit";
+            update.review_note = feedback ?? "";
+            update.down_arrow_designation = "further_review";
+            seenIds.current.add(card.id);
+            undoStack.current.push({
+              cardId: card.id,
+              direction,
+              feedback,
+              previousStatus: card.review_status,
+              timestamp: Date.now(),
+            });
+            if (undoStack.current.length > 50) undoStack.current.shift();
+
             supabase
               .from("content_items")
-              .update({ starred: newStarred, updated_at: new Date().toISOString() })
+              .update(update)
               .eq("id", card.id)
               .then();
 
             setStats((s) => ({
               ...s,
-              starred: s.starred + (newStarred ? 1 : -1),
+              totalSwiped: s.totalSwiped + 1,
+              sentForReview: s.sentForReview + 1,
             }));
-
-            const updated = prev.map((c) =>
-              c.id === card.id ? { ...c, starred: newStarred } : c
-            );
-            return updated;
-          }
+            return prev.slice(1);
         }
       });
     },
@@ -269,6 +277,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
         .update({
           review_status: "pending" as ReviewStatus,
           review_note: null,
+          down_arrow_designation: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", lastAction.cardId)
@@ -289,6 +298,8 @@ export function useFeed(persona: Persona): UseFeedReturn {
             s.rejected - (lastAction.direction === "left" ? 1 : 0),
           variants:
             s.variants - (lastAction.direction === "up" ? 1 : 0),
+          sentForReview:
+            s.sentForReview - (lastAction.direction === "down" ? 1 : 0),
         }));
       }
     } catch {

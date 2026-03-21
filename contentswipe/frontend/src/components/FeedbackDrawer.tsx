@@ -100,7 +100,7 @@ export function FeedbackDrawer({
                   : direction === "up"
                     ? "What should be different in the variant?"
                     : direction === "down"
-                      ? "What kind of ideas are you looking for?"
+                      ? "What should the next version address?"
                       : "Add your notes..."
               }
               rows={3}
