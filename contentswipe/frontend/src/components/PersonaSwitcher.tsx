@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Layers, Video, Plane, Building2, Gamepad2, Coffee, User } from "lucide-react";
+import { ChevronDown, Plus, Layers, Video, Plane, Building2, Gamepad2, Coffee, User } from "lucide-react";
 import type { Persona } from "../lib/personas";
 
 const ICONS: Record<Persona["icon"], typeof Layers> = {
@@ -16,12 +16,14 @@ interface PersonaSwitcherProps {
   personas: Persona[];
   current: Persona;
   onSelect: (persona: Persona) => void;
+  onCreateNew: () => void;
 }
 
 export function PersonaSwitcher({
   personas,
   current,
   onSelect,
+  onCreateNew,
 }: PersonaSwitcherProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,6 +94,26 @@ export function PersonaSwitcher({
               </button>
             );
           })}
+
+          <div className="mt-1 border-t border-slate-200/60 pt-1">
+            <button
+              onClick={() => {
+                onCreateNew();
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-[22px] px-3 py-3 text-left text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <div className="rounded-2xl bg-slate-100 p-2">
+                <Plus className="h-4 w-4 text-slate-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">New Persona</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Create and configure a new persona
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
       )}
     </div>

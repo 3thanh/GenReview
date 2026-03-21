@@ -10,6 +10,7 @@ interface FeedContext {
   feedSourceMode: FeedSourceMode;
   onChangeFeedSourceMode: (mode: FeedSourceMode) => void;
   onSelectPersona: (personaId: string) => void;
+  onCreatePersona: () => void;
   stats: { remaining: number; approved: number; rejected: number };
 }
 
@@ -61,6 +62,7 @@ export function Navbar({ activeView, onNavigate, feedContext }: NavbarProps) {
           personas={feedContext.personas}
           current={feedContext.activePersona}
           onSelect={(p) => feedContext.onSelectPersona(p.id)}
+          onCreateNew={feedContext.onCreatePersona}
         />
       )}
 
