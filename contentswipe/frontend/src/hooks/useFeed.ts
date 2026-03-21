@@ -50,7 +50,7 @@ interface FeedCachePayload {
 }
 
 const FEED_CACHE_KEY_PREFIX = "contentswipe.feed.v1";
-const DEMO_FEED_CACHE_KEY_PREFIX = "contentswipe.demoFeed.v1";
+const DEMO_FEED_CACHE_KEY_PREFIX = "contentswipe.demoFeed.v2";
 
 function insertSorted(cards: ContentItem[], nextCard: ContentItem): ContentItem[] {
   const next = [...cards.filter((card) => card.id !== nextCard.id), nextCard];
