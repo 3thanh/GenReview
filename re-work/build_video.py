@@ -340,7 +340,11 @@ if __name__ == "__main__":
         print("Copy yash_talking_head_60s.mp4 into source_assets/")
         sys.exit(1)
 
-    step1_audio()
+    seg1_wav = os.path.join(AUDIO_DIR, "seg_1.wav")
+    if os.path.exists(seg1_wav) and os.path.getsize(seg1_wav) > 10000:
+        print("=== STEP 1: SKIPPED — using existing ElevenLabs audio ===")
+    else:
+        step1_audio()
     step2_video()
     step3_concat()
     step4_qc()
