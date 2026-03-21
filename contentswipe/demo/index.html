@@ -124,6 +124,25 @@ body{
   width:8px;height:8px;border-radius:50%;display:inline-block;
 }
 
+/* ─── LinkedIn-style author header ─── */
+.linkedin-author{
+  display:flex;align-items:center;gap:10px;
+  padding:0 0 8px;border-bottom:1px solid rgba(255,255,255,.06);
+}
+.linkedin-author .author-avatar{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;color:#fff;
+}
+.linkedin-author .author-name{font-size:14px;font-weight:600;color:var(--text)}
+.linkedin-author .author-headline{font-size:11px;color:var(--dim);line-height:1.3}
+.linkedin-icon{
+  width:18px;height:18px;border-radius:4px;background:#0a66c2;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:#fff;flex-shrink:0;
+  margin-left:auto;
+}
+
 /* ─── Support card — conversation thread ─── */
 .card.support-card .card-visual{display:none}
 .card.support-card{display:flex;flex-direction:column}
@@ -463,6 +482,7 @@ const DEMO_CARDS = [
   {
     id: "l1", title: "The 5am Coffee Myth", content_type: "linkedin_post",
     business_id: "b1", status: "pending",
+    author: { name: "Sarah Chen", headline: "Founder & Head Roaster @ Acme Coffee Co", initials: "SC" },
     description: "Thought leadership post debunking the hustle-culture 5am coffee trope while subtly positioning our slow-brew philosophy.",
     script: "\"I wake up at 5am and drink black coffee.\"\n\nCool. But does it taste good?\n\nWe've been so obsessed with productivity hacks that we forgot coffee is supposed to be enjoyed.\n\nHere's what I've learned running a specialty roastery for 8 years:\n\n→ The best cup takes 4 minutes, not 40 seconds\n→ Your beans shouldn't taste like \"dark roast\" — they should taste like WHERE they grew\n→ The ritual matters more than the caffeine\n\nSlow down. Your morning deserves better.\n\n#coffee #slowliving #specialty",
     gradient: "linear-gradient(135deg,#1e1b4b,#4338ca,#6366f1)"
@@ -470,6 +490,7 @@ const DEMO_CARDS = [
   {
     id: "l2", title: "Why We Killed Our Dashboard", content_type: "linkedin_post",
     business_id: "b2", status: "pending",
+    author: { name: "Marcus Wright", headline: "CEO @ Driftwood SaaS | Building analytics that find you", initials: "MW" },
     description: "Contrarian take about removing the traditional dashboard in favor of proactive alerts — drives conversation and product interest.",
     script: "Last month we did something radical.\n\nWe killed our dashboard.\n\nNot because it was broken. Because it was working perfectly — and nobody was using it.\n\n87% of our users logged in, glanced at the charts, and logged out. No action taken.\n\nSo we replaced it with something better: insights that come to YOU.\n\n• Anomaly? Slack ping.\n• Trend shift? Email digest.\n• Opportunity? Push notification.\n\nThe best dashboard is one you never have to open.\n\nHot take? Maybe. But our activation rate is up 340%.\n\nWhat's your most-ignored dashboard?",
     gradient: "linear-gradient(135deg,#172554,#1e40af,#3b82f6)"
@@ -477,9 +498,27 @@ const DEMO_CARDS = [
   {
     id: "l3", title: "Fashion Has a Waste Problem", content_type: "linkedin_post",
     business_id: "b3", status: "pending",
+    author: { name: "Eloise Duval", headline: "Creative Director @ Maison Noir | Ethical fashion", initials: "ED" },
     description: "Sustainability-focused post that positions Maison Noir's approach to ethical fashion and limited runs.",
     script: "92 million tons of textile waste. Every year.\n\nThat's not a fashion problem. That's a humanity problem.\n\nAt Maison Noir, we made a decision early:\n\n1. Never produce more than we can sell\n2. Every fabric is deadstock or certified organic\n3. If it can't last 10 years, we don't make it\n\nOur margins are thinner. Our drops are smaller.\n\nBut our pieces don't end up in landfills.\n\nFashion should outlive trends.\n\n♻️ What brands are doing it right? Tag them below.",
     gradient: "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)"
+  },
+
+  {
+    id: "l4", title: "GTC 2026 Recap — CuTile & DGX Spark", content_type: "linkedin_post",
+    business_id: "b4", status: "pending",
+    author: { name: "Lakshmi Ramesh", headline: "Systems Software Engineer @ NVIDIA | MS Research Thesis in ML", initials: "LR" },
+    description: "Personal recap post from NVIDIA GTC 2026 — highlights showcasing CuTile kernel library, supporting the DGX Spark training lab, and the Build-a-Claw booth experience.",
+    script: "Had an incredible experience at NVIDIA GTC 2026! 🚀\n\nI had the opportunity to showcase CuTile, a kernel development library by NVIDIA designed to simplify writing high-performance GPU kernels with a more intuitive, Python-friendly workflow. Using NVIDIA DGX Spark, developers can prototype and experiment locally, and then scale their workloads to the cloud ⚡\n\nI also supported the \"Hands-On NVIDIA DGX Spark\" training lab, where we guided participants through building AI agents end-to-end 🧑‍💻. It was a fantastic experience working alongside Piyush Medikeri, Federico Galbiati, and many others who made this lab such a success.\n\nIn addition, I spent some time at the Build-a-Claw booth at GTC, where we helped users customize and deploy their own secure OpenClaw agents on DGX Spark or RTX GPUs 🎨.\n\nOverall, GTC was an amazing experience — great conversations, inspiring demos, and the chance to connect with so many talented people from around the world 🌍✨\n\n#GTC2026 #NVIDIAGTC #NVIDIAAI #AI #GenerativeAI #AIEngineering #DGX #DGXSpark #AICommunity #AIAgents #AgenticAI #OpenClaw",
+    gradient: "linear-gradient(135deg,#1a3a0a,#76b900,#93d100)"
+  },
+  {
+    id: "l5", title: "clay-gtm-cli: Clay as Agent-Callable Functions", content_type: "linkedin_post",
+    business_id: "b5", status: "pending",
+    author: { name: "Brandon Charleson", headline: "AI-powered junkie / Clay & Automation Expert / Cold email strategist", initials: "BC" },
+    description: "Tutorial announcement post about clay-gtm-cli — a paradigm shift from using Clay as a spreadsheet to using it as a function platform that AI agents can call directly.",
+    script: "By popular demand — I recorded a full tutorial on clay-gtm-cli.\n\nBut first, let me explain why this is a completely different way to use Clay.\n\nMost people use Clay like a spreadsheet. A platform in which we spend thousands of hours in.\n\nBuild a table. Add enrichment steps. Watch the rows fill in. Add to campaign. Send to CRM. Export the CSV. Repeat.\n\nThat workflow works. But you're the operator.\n\nYou're sitting between every step — manually triggering, manually moving data, manually doing the thing Clay was supposed to automate.\n\n\"Let me rebuild this table I built 6+ months ago!\" -- said no one ever.\n\nHere's the shift:\n\nWhat if Clay wasn't a spreadsheet you live inside — but a function platform your agent calls?\n\nThat's what clay-gtm-cli does.\n\nYou're now the Orchestrator and the Agent Manager.\n\nYou build the enrichment logic once in Clay — LeadMagic, Prospeo, Ocean.io, Octave, Enrichley, ContactOut, whatever combination you need. Then your AI agent calls it by name. One command. Structured JSON back. No dashboard. No export. No human in the loop.\n\nIn the tutorial I cover:\n\n→ Installing clay-gtm-cli (2 minutes)\n→ Registering your first Clay table as a callable function\n→ The cloudflared tunnel trick that makes callbacks work locally\n→ Running a live enrichment — fire, wait, get JSON\n→ Wiring it up as an MCP server so Claude or Cursor can call Clay directly\n→ Row limit tracking (so Clay doesn't silently stop on you at 50K)\n\nThe full stack in action:\n\ninstantly-cli → outbound for Instantly.ai (campaigns, leads, replies)\nclay-gtm-cli → enrichment (Clay as agent-callable functions)\nn8n → automations (the evergreen plumbing between everything)\nOpenClaw → the agent that orchestrates all of it\n\nThis isn't a concept. This is running. Right now. 🍻",
+    gradient: "linear-gradient(135deg,#3d1e08,#c45a1c,#e87040)"
   },
 
   // ── Support Replies — Intercom conversation threads ──
@@ -674,6 +713,9 @@ function renderCards() {
 }
 
 function renderGenericCard(card, cls, biz) {
+  if (card.content_type === "linkedin_post" && card.author) {
+    return renderLinkedInCard(card, cls, biz);
+  }
   return `<div class="card ${cls}" data-id="${card.id}">
     <div class="card-visual" style="background:${card.gradient}">
       <span class="type-badge ${card.content_type}">${TYPE_LABELS[card.content_type]}</span>
@@ -682,6 +724,33 @@ function renderGenericCard(card, cls, biz) {
       <h2>${card.title}</h2>
       <div class="desc">${card.description}</div>
       <div class="script-preview">${card.script.slice(0, 280)}${card.script.length > 280 ? "…" : ""}</div>
+      <div class="campaign-tag">
+        <span style="background:${biz?.color ?? '#666'}"></span>
+        ${biz?.name ?? "Unknown"}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLinkedInCard(card, cls, biz) {
+  const a = card.author;
+  const postLines = card.script.split("\n").filter(l => l.trim());
+  const previewText = card.script.slice(0, 400) + (card.script.length > 400 ? "…" : "");
+
+  return `<div class="card ${cls}" data-id="${card.id}">
+    <div class="card-visual" style="background:${card.gradient};height:32%">
+      <span class="type-badge linkedin_post">LinkedIn Post</span>
+    </div>
+    <div class="card-body" style="gap:12px">
+      <div class="linkedin-author">
+        <div class="author-avatar" style="background:${biz?.color ?? '#666'}">${a.initials}</div>
+        <div>
+          <div class="author-name">${a.name}</div>
+          <div class="author-headline">${a.headline}</div>
+        </div>
+        <div class="linkedin-icon">in</div>
+      </div>
+      <div class="script-preview" style="font-family:'Outfit',sans-serif;font-size:13px;color:#d4d4d8;line-height:1.55;white-space:pre-wrap">${previewText}</div>
       <div class="campaign-tag">
         <span style="background:${biz?.color ?? '#666'}"></span>
         ${biz?.name ?? "Unknown"}
