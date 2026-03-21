@@ -92,7 +92,7 @@ function FeedPreviewSlice({
   return (
     <div
       aria-hidden="true"
-      className={`hidden h-full w-[120px] shrink-0 lg:flex xl:w-[148px] ${roundClass} overflow-hidden border border-zinc-800/80 bg-zinc-900 shadow-xl shadow-black/30`}
+      className={`flex h-full w-[100px] shrink-0 lg:w-[120px] xl:w-[148px] ${roundClass} overflow-hidden border border-zinc-800/80 bg-zinc-900 shadow-xl shadow-black/30`}
     >
       <div className="relative flex h-full w-full flex-col">
         {/* Image/thumbnail preview */}
