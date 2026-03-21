@@ -1091,7 +1091,8 @@ export function Studio({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="border-t border-slate-200/80 bg-white/44 px-6 py-4 backdrop-blur-xl">
+        <div className="flex flex-col border-t border-slate-200/80 bg-white/44 backdrop-blur-xl" style={{ maxHeight: "60vh" }}>
+          <div className="flex-1 overflow-y-auto min-h-0 px-6 pt-4 pb-1">
           {activePersona && (
             <div className="mb-3 overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/60 backdrop-blur-md">
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/60">
@@ -1506,45 +1507,49 @@ export function Studio({
             </div>
           )}
 
-          <div className="flex items-end gap-3">
-            <div className="flex-1 relative">
-              <div className="absolute left-3.5 top-3 flex items-center gap-1.5 pointer-events-none">
-                <FileText className="h-3.5 w-3.5 text-slate-400" />
-                {!input.trim() && (
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                    Script Outline
-                  </span>
-                )}
+          </div>
+
+          <div className="flex-shrink-0 px-6 pb-4 pt-2">
+            <div className="flex items-end gap-3">
+              <div className="flex-1 relative">
+                <div className="absolute left-3.5 top-3 flex items-center gap-1.5 pointer-events-none">
+                  <FileText className="h-3.5 w-3.5 text-slate-400" />
+                  {!input.trim() && (
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      Script Outline
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Outline the key beats, scenes, or information for the video..."
+                  rows={3}
+                  className="surface-input w-full resize-none rounded-[24px] pl-4 pr-4 pt-8 pb-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-sky-300 focus:outline-none"
+                />
               </div>
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Outline the key beats, scenes, or information for the video..."
-                rows={3}
-                className="surface-input w-full resize-none rounded-[24px] pl-4 pr-4 pt-8 pb-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-sky-300 focus:outline-none"
-              />
+              <button
+                onClick={() => {
+                  void handleGenerate();
+                }}
+                disabled={
+                  !input.trim() ||
+                  generating ||
+                  loadingSessions ||
+                  !activeSession ||
+                  !businessId
+                }
+                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-slate-900 text-white transition-all hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                {generating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </button>
             </div>
-            <button
-              onClick={() => {
-                void handleGenerate();
-              }}
-              disabled={
-                !input.trim() ||
-                generating ||
-                loadingSessions ||
-                !activeSession ||
-                !businessId
-              }
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-slate-900 text-white transition-all hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              {generating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </button>
           </div>
         </div>
       </div>
