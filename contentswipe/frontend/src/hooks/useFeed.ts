@@ -22,7 +22,7 @@ interface SessionStats {
   approved: number;
   rejected: number;
   variants: number;
-  sentForReview: number;
+  ideas: number;
   undos: number;
 }
 
@@ -50,7 +50,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
     approved: 0,
     rejected: 0,
     variants: 0,
-    sentForReview: 0,
+    ideas: 0,
     undos: 0,
   });
 
@@ -95,7 +95,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
   useEffect(() => {
     seenIds.current.clear();
     undoStack.current = [];
-    setStats({ totalSwiped: 0, approved: 0, rejected: 0, variants: 0, sentForReview: 0, undos: 0 });
+    setStats({ totalSwiped: 0, approved: 0, rejected: 0, variants: 0, ideas: 0, undos: 0 });
     fetchCards();
   }, [fetchCards]);
 
@@ -153,6 +153,18 @@ export function useFeed(persona: Persona): UseFeedReturn {
         const card = prev[0];
         if (!card) return prev;
 
+        seenIds.current.add(card.id);
+
+        undoStack.current.push({
+          cardId: card.id,
+          direction,
+          feedback,
+          previousStatus: card.review_status,
+          timestamp: Date.now(),
+        });
+
+        if (undoStack.current.length > 50) undoStack.current.shift();
+
         const update: Record<string, any> = {
           updated_at: new Date().toISOString(),
         };
@@ -160,108 +172,37 @@ export function useFeed(persona: Persona): UseFeedReturn {
         switch (direction) {
           case "right":
             update.review_status = "approved";
-            seenIds.current.add(card.id);
-            undoStack.current.push({
-              cardId: card.id,
-              direction,
-              feedback,
-              previousStatus: card.review_status,
-              timestamp: Date.now(),
-            });
-            if (undoStack.current.length > 50) undoStack.current.shift();
-
-            supabase
-              .from("content_items")
-              .update(update)
-              .eq("id", card.id)
-              .then();
-
-            setStats((s) => ({
-              ...s,
-              totalSwiped: s.totalSwiped + 1,
-              approved: s.approved + 1,
-            }));
-            return prev.slice(1);
-
+            break;
           case "left":
             update.review_status = "rejected";
             if (feedback) update.review_note = feedback;
-            seenIds.current.add(card.id);
-            undoStack.current.push({
-              cardId: card.id,
-              direction,
-              feedback,
-              previousStatus: card.review_status,
-              timestamp: Date.now(),
-            });
-            if (undoStack.current.length > 50) undoStack.current.shift();
-
-            supabase
-              .from("content_items")
-              .update(update)
-              .eq("id", card.id)
-              .then();
-
-            setStats((s) => ({
-              ...s,
-              totalSwiped: s.totalSwiped + 1,
-              rejected: s.rejected + 1,
-            }));
-            return prev.slice(1);
-
+            break;
           case "up":
             update.review_status = "needs_edit";
             update.review_note = feedback ?? "";
-            seenIds.current.add(card.id);
-            undoStack.current.push({
-              cardId: card.id,
-              direction,
-              feedback,
-              previousStatus: card.review_status,
-              timestamp: Date.now(),
-            });
-            if (undoStack.current.length > 50) undoStack.current.shift();
-
-            supabase
-              .from("content_items")
-              .update(update)
-              .eq("id", card.id)
-              .then();
-
-            setStats((s) => ({
-              ...s,
-              totalSwiped: s.totalSwiped + 1,
-              variants: s.variants + 1,
-            }));
-            return prev.slice(1);
-
+            break;
           case "down":
             update.review_status = "needs_edit";
             update.review_note = feedback ?? "";
-            update.down_arrow_designation = "further_review";
-            seenIds.current.add(card.id);
-            undoStack.current.push({
-              cardId: card.id,
-              direction,
-              feedback,
-              previousStatus: card.review_status,
-              timestamp: Date.now(),
-            });
-            if (undoStack.current.length > 50) undoStack.current.shift();
-
-            supabase
-              .from("content_items")
-              .update(update)
-              .eq("id", card.id)
-              .then();
-
-            setStats((s) => ({
-              ...s,
-              totalSwiped: s.totalSwiped + 1,
-              sentForReview: s.sentForReview + 1,
-            }));
-            return prev.slice(1);
+            break;
         }
+
+        supabase
+          .from("content_items")
+          .update(update)
+          .eq("id", card.id)
+          .then();
+
+        setStats((s) => ({
+          ...s,
+          totalSwiped: s.totalSwiped + 1,
+          approved: s.approved + (direction === "right" ? 1 : 0),
+          rejected: s.rejected + (direction === "left" ? 1 : 0),
+          variants: s.variants + (direction === "up" ? 1 : 0),
+          ideas: s.ideas + (direction === "down" ? 1 : 0),
+        }));
+
+        return prev.slice(1);
       });
     },
     []
@@ -277,7 +218,6 @@ export function useFeed(persona: Persona): UseFeedReturn {
         .update({
           review_status: "pending" as ReviewStatus,
           review_note: null,
-          down_arrow_designation: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", lastAction.cardId)
@@ -293,13 +233,17 @@ export function useFeed(persona: Persona): UseFeedReturn {
           totalSwiped: Math.max(0, s.totalSwiped - 1),
           undos: s.undos + 1,
           approved:
-            s.approved - (lastAction.direction === "right" ? 1 : 0),
+            s.approved -
+            (lastAction.direction === "right" ? 1 : 0),
           rejected:
-            s.rejected - (lastAction.direction === "left" ? 1 : 0),
+            s.rejected -
+            (lastAction.direction === "left" ? 1 : 0),
           variants:
-            s.variants - (lastAction.direction === "up" ? 1 : 0),
-          sentForReview:
-            s.sentForReview - (lastAction.direction === "down" ? 1 : 0),
+            s.variants -
+            (lastAction.direction === "up" ? 1 : 0),
+          ideas:
+            s.ideas -
+            (lastAction.direction === "down" ? 1 : 0),
         }));
       }
     } catch {
