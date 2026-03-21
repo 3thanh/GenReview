@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { SwipeFeed, type FeedStats } from "./components/SwipeFeed";
 import { Studio } from "./components/Studio";
+import { PersonaPreview } from "./components/PersonaPreview";
 import type { FeedSourceMode } from "./lib/feed-source";
 import {
   PERSONAS,
@@ -63,6 +64,8 @@ export default function App() {
   const [{ personas, activePersonaId, feedSourceMode }, setAppState] = useState(getInitialAppState);
   const [view, setView] = useState<"feed" | "studio">("feed");
   const [feedStats, setFeedStats] = useState<FeedStats>({ remaining: 0, approved: 0, rejected: 0 });
+  const [showPersonaPreview, setShowPersonaPreview] = useState(false);
+  const [previewPersona, setPreviewPersona] = useState<Persona | null>(null);
   const handleStatsChange = useCallback((s: FeedStats) => setFeedStats(s), []);
 
   useEffect(() => {
@@ -97,11 +100,30 @@ export default function App() {
   };
 
   const handleSelectPersona = (personaId: string) => {
+    const selected = personas.find((p) => p.id === personaId) ?? personas[0];
+    setPreviewPersona(selected);
+    setShowPersonaPreview(true);
     setAppState((prev) => ({
       ...prev,
       activePersonaId: personaId,
     }));
   };
+
+  const handleDismissPreview = useCallback(() => {
+    setShowPersonaPreview(false);
+    setPreviewPersona(null);
+  }, []);
+
+  useEffect(() => {
+    if (!showPersonaPreview) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === "Escape") {
+        handleDismissPreview();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showPersonaPreview, handleDismissPreview]);
 
   const handleFeedSourceModeChange = (mode: FeedSourceMode) => {
     setAppState((prev) => ({
@@ -117,7 +139,7 @@ export default function App() {
           activeView={view}
           onNavigate={setView}
           feedContext={
-            view === "feed"
+            view === "feed" || showPersonaPreview
               ? {
                   personas,
                   activePersona:
@@ -130,7 +152,12 @@ export default function App() {
               : undefined
           }
         />
-        {view === "feed" ? (
+        {showPersonaPreview && previewPersona ? (
+          <PersonaPreview
+            persona={previewPersona}
+            onContinue={handleDismissPreview}
+          />
+        ) : view === "feed" ? (
           <SwipeFeed
             personas={personas}
             activePersonaId={activePersonaId}
