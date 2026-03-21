@@ -11,9 +11,9 @@ const MODEL = "veo-3.1-generate-preview";
 const POLL_INTERVAL_MS = 10_000;
 
 const CAMERA_PREFIXES: Record<CameraStyle, string> = {
-  stable: "Smooth, locked-off tripod camera with no shake or handheld movement. Steady, cinematic framing.",
-  smooth: "Smooth, fluid camera movement — gentle dolly and pan motions, no handheld shake. Professional steadicam feel.",
-  dynamic: "Energetic camera with controlled tracking shots and purposeful motion. Not shaky, but active and engaging.",
+  stable: "Locked-off tripod camera. Absolutely zero camera shake, zero handheld movement, zero wobble. Rock-steady cinematic framing as if mounted on a heavy studio rig. No movement at all unless a slow, perfectly smooth mechanical dolly push.",
+  smooth: "Professional steadicam or gimbal-stabilized camera. No handheld shake whatsoever. Only gentle, perfectly fluid dolly or pan motions. Studio-quality stabilization with zero jitter or wobble.",
+  dynamic: "Energetic camera with controlled mechanical tracking shots and purposeful motion. Gimbal-stabilized, never handheld. Active and engaging framing but always smooth — no shake or jitter.",
   handheld: "Subtle handheld camera feel with natural micro-movements. Documentary style, slightly organic but not jarring.",
   chaotic: "Intense handheld camera with visible shake and urgency. Frenetic, raw energy.",
 };
@@ -26,7 +26,10 @@ export async function generateVideo(
   videoPrompt: string,
   cameraStyle: CameraStyle = "smooth",
 ): Promise<Buffer> {
-  const styledPrompt = `${CAMERA_PREFIXES[cameraStyle]} ${videoPrompt}`;
+  const antiShakeSuffix = (cameraStyle === "stable" || cameraStyle === "smooth")
+    ? " Do not use handheld camera. No camera shake. No wobble. Keep the camera perfectly steady and stabilized throughout."
+    : "";
+  const styledPrompt = `${CAMERA_PREFIXES[cameraStyle]} ${videoPrompt}${antiShakeSuffix}`;
 
   console.log("\n[VIDEO] Starting Veo generation...");
   console.log(`  Model: ${MODEL}`);

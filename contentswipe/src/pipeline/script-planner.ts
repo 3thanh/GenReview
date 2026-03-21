@@ -108,8 +108,10 @@ RULES:
 - sfx should describe acoustic character, not just name the sound — think texture, scale, environment
 - sfx prompt should NEVER describe voices, speech, music, or silence
 - videoPrompt should paint a vivid visual picture with no audio references
-- videoPrompt MUST include explicit camera movement/stability instructions. Default to smooth, steady camera work. Only use shaky/handheld camera for action-heavy or chaotic scenes (crashes, chases, urgency). Calm/lifestyle/tutorial content should always specify "smooth steady camera", "locked tripod shot", or "gentle dolly movement".
-- cameraStyle should match the content mood: lifestyle/tutorial/product → "stable" or "smooth", action/sports → "dynamic", documentary/BTS → "handheld", crash/chaos → "chaotic"
+- videoPrompt MUST include explicit camera movement/stability instructions. Default to smooth, steady camera work. Only use shaky/handheld camera for real-world action-heavy or chaotic scenes (car crashes, chases, combat). Calm/lifestyle/tutorial/character/animated/fictional content should always specify "smooth steady camera", "locked tripod shot", or "gentle dolly movement".
+- cameraStyle should match the content mood: lifestyle/tutorial/product/animated/character/gaming/Pokemon → "stable" or "smooth", real-world action/sports → "dynamic", documentary/BTS → "handheld", real-world crash/chaos → "chaotic"
+- IMPORTANT: Animated characters, Pokemon, gaming content, fictional characters, and cartoon-style videos should ALWAYS use "stable" or "smooth" cameraStyle. Never use handheld or dynamic for these — they need polished, cinematic framing.
+- videoPrompt for animated/character content should explicitly say "locked-off tripod shot" or "smooth steady camera on a dolly" — never describe handheld or shaky camera movement for this content.
 - stability: LOW (0.1-0.3) for excited/emotional, MED (0.3-0.5) for conversational, HIGH (0.6-0.8) for calm/authoritative
 - style: HIGH (0.5-0.8) for dramatic/expressive, LOW (0.1-0.3) for understated
 - scenes should flow like a real video — establish, build, payoff
