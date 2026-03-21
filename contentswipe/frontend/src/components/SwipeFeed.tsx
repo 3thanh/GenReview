@@ -53,20 +53,20 @@ const TYPE_CONFIG = {
   video: {
     Icon: Film,
     label: "Video",
-    badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-    accentGradient: "from-purple-500/10 via-transparent to-indigo-500/10",
+    badgeColor: "border-sky-200 bg-sky-50 text-sky-700",
+    accentGradient: "from-sky-100 via-white to-indigo-50",
   },
   social: {
     Icon: Share2,
     label: "Social",
-    badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-    accentGradient: "from-blue-500/10 via-transparent to-cyan-500/10",
+    badgeColor: "border-blue-200 bg-blue-50 text-blue-700",
+    accentGradient: "from-cyan-100 via-white to-blue-50",
   },
   support: {
     Icon: Headphones,
     label: "Support",
-    badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    accentGradient: "from-amber-500/10 via-transparent to-orange-500/10",
+    badgeColor: "border-amber-200 bg-amber-50 text-amber-700",
+    accentGradient: "from-amber-50 via-white to-orange-50",
   },
 } as const;
 
@@ -92,10 +92,9 @@ function FeedPreviewSlice({
   return (
     <div
       aria-hidden="true"
-      className={`flex h-full w-[100px] shrink-0 lg:w-[120px] xl:w-[148px] ${roundClass} overflow-hidden border border-zinc-800/80 bg-zinc-900 shadow-xl shadow-black/30`}
+      className={`surface-panel flex h-full w-[100px] shrink-0 lg:w-[120px] xl:w-[148px] ${roundClass} overflow-hidden`}
     >
       <div className="relative flex h-full w-full flex-col">
-        {/* Image/thumbnail preview */}
         {previewImage ? (
           <div className="relative h-[45%] w-full shrink-0 overflow-hidden">
             <img
@@ -103,18 +102,17 @@ function FeedPreviewSlice({
               alt=""
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-zinc-900" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
           </div>
         ) : (
           <div className={`relative flex h-[45%] w-full shrink-0 items-center justify-center bg-gradient-to-br ${config.accentGradient}`}>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
-              <TypeIcon className="h-5 w-5 text-zinc-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/70 ring-1 ring-white/80">
+              <TypeIcon className="h-5 w-5 text-slate-500" />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-900" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
           </div>
         )}
 
-        {/* Content info */}
         <div className="flex flex-1 flex-col justify-between p-3">
           <div>
             <div className="mb-2 flex items-center gap-1.5">
@@ -124,24 +122,23 @@ function FeedPreviewSlice({
                 {config.label}
               </span>
               {ChannelIcon && (
-                <ChannelIcon className="h-3 w-3 text-zinc-600" />
+                <ChannelIcon className="h-3 w-3 text-slate-400" />
               )}
             </div>
-            <p className="line-clamp-3 text-xs font-semibold leading-snug text-zinc-300">
+            <p className="line-clamp-3 text-xs font-semibold leading-snug text-slate-700">
               {card.title}
             </p>
             {card.body_text && (
-              <p className="mt-1.5 line-clamp-2 text-[10px] leading-relaxed text-zinc-500">
+              <p className="mt-1.5 line-clamp-2 text-[10px] leading-relaxed text-slate-500">
                 {card.body_text}
               </p>
             )}
           </div>
 
-          {/* Skeleton shimmer lines at bottom for visual richness */}
           <div className="mt-auto space-y-1.5 pt-3">
-            <div className="h-1 w-full rounded-full bg-zinc-800" />
-            <div className="h-1 w-3/4 rounded-full bg-zinc-800" />
-            <div className="h-1 w-1/2 rounded-full bg-zinc-800" />
+            <div className="h-1 w-full rounded-full bg-slate-200" />
+            <div className="h-1 w-3/4 rounded-full bg-slate-200" />
+            <div className="h-1 w-1/2 rounded-full bg-slate-200" />
           </div>
         </div>
       </div>
@@ -282,7 +279,7 @@ export function SwipeFeed({
     if (!currentCard || drawerOpen) return;
     captureVideoTimestamp();
     setDrawerInitialText(key);
-    setPendingDirection("left");
+    setPendingDirection("up");
     setDrawerOpen(true);
   }, [currentCard, drawerOpen, captureVideoTimestamp]);
 
