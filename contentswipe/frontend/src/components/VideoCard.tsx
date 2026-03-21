@@ -105,7 +105,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     return (
       <div className="px-5 pb-4">
         {card.video_url ? (
-          <div className="relative rounded-xl overflow-hidden bg-black aspect-video mb-4 group">
+          <div className="group relative mb-5 aspect-video overflow-hidden rounded-[24px] bg-slate-900">
             <video
               ref={videoRef}
               src={card.video_url}
@@ -118,22 +118,22 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             />
             <button
               onClick={handleToggle}
-              className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors"
+              className="absolute inset-0 flex items-center justify-center bg-slate-950/0 transition-colors group-hover:bg-slate-950/20"
             >
-              <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100">
                 {isPlaying ? (
-                  <Pause className="w-5 h-5 text-white" />
+                  <Pause className="h-5 w-5 text-white" />
                 ) : (
-                  <Play className="w-5 h-5 text-white ml-0.5" />
+                  <Play className="ml-0.5 h-5 w-5 text-white" />
                 )}
               </div>
             </button>
 
-            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 backdrop-blur-sm">
+            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/30 bg-white/22 px-3 py-1.5 backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => setMuted((current) => !current)}
-                className="text-zinc-100 transition-colors hover:text-white"
+                className="text-white/90 transition-colors hover:text-white"
                 aria-label={muted ? "Unmute video" : "Mute video"}
               >
                 {muted ? (
@@ -154,51 +154,65 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               />
             </div>
 
-            {/* Paused timestamp overlay */}
             {!isPlaying && duration > 0 && (
-              <div className="absolute top-3 right-3 px-2 py-1 rounded-md bg-black/70 backdrop-blur-sm">
-                <span className="text-xs text-white font-mono font-medium">
+              <div className="absolute right-3 top-3 rounded-full border border-white/25 bg-slate-950/45 px-3 py-1 backdrop-blur-md">
+                <span className="font-mono text-xs font-medium text-white">
                   {formatTime(currentTime)}
                 </span>
               </div>
             )}
 
-            {/* Progress bar */}
             {duration > 0 && (
               <div className="absolute bottom-0 left-0 right-0">
-                <div className="h-1 bg-white/10">
+                <div className="h-1 bg-white/15">
                   <div
-                    className="h-full bg-white/60 transition-[width] duration-200"
+                    className="h-full bg-white/75 transition-[width] duration-200"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
               </div>
             )}
           </div>
+        ) : card.thumbnail_url ? (
+          <div className="relative mb-5 aspect-video overflow-hidden rounded-[24px] bg-slate-900">
+            <img
+              src={card.thumbnail_url}
+              alt={card.title}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-950/30">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-md">
+                <Film className="h-5 w-5 text-white" />
+              </div>
+            </div>
+            <div className="absolute left-3 top-3 rounded-full border border-white/25 bg-slate-950/45 px-3 py-1 backdrop-blur-md">
+              <span className="text-[11px] font-medium text-white/90">Rendering…</span>
+            </div>
+          </div>
         ) : (
-          <div className="rounded-xl bg-zinc-800/50 aspect-video mb-4 flex flex-col items-center justify-center gap-2 border border-zinc-700/50 border-dashed">
-            <Film className="w-8 h-8 text-zinc-600" />
-            <span className="text-xs text-zinc-500">Video generating...</span>
+          <div className="surface-muted mb-4 flex aspect-video flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed">
+            <Film className="h-8 w-8 text-slate-400" />
+            <span className="text-xs text-slate-500">Video generating…</span>
           </div>
         )}
 
-        <h2 className="text-lg font-semibold text-white mb-2 leading-tight">
+        <h2 className="mb-2 text-xl font-bold leading-tight text-slate-900">
           {card.title}
         </h2>
 
         {card.script && (
-          <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/30">
-            <p className="text-xs text-zinc-400 font-medium mb-1.5 uppercase tracking-wider">
+          <div className="surface-muted rounded-[22px] p-4">
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
               Script
             </p>
-            <p className="text-sm text-zinc-300 leading-relaxed line-clamp-4 whitespace-pre-wrap">
+            <p className="line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
               {card.script}
             </p>
           </div>
         )}
 
         {card.body_text && !card.script && (
-          <p className="text-sm text-zinc-400 leading-relaxed line-clamp-3">
+          <p className="line-clamp-3 text-sm leading-relaxed text-slate-500">
             {card.body_text}
           </p>
         )}

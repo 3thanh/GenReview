@@ -68,24 +68,21 @@ export function FeedbackDrawer({
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-40"
+            className="fixed inset-0 z-40 bg-slate-900/18 backdrop-blur-[2px]"
             onClick={onCancel}
           />
 
-          {/* Drawer */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-700/50 rounded-t-2xl px-5 pt-4 pb-6 max-w-lg mx-auto"
+            className="surface-panel fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-lg rounded-t-[28px] px-5 pb-6 pt-4"
           >
-            {/* Handle + header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 {label && (
@@ -94,30 +91,28 @@ export function FeedbackDrawer({
                     style={{ backgroundColor: label.color }}
                   />
                 )}
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-slate-900">
                   {label?.action ?? "Add feedback"}
                 </h3>
               </div>
               <button
                 onClick={onCancel}
-                className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                className="surface-muted flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-900"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Video timestamp badge */}
             {hasTimestamp && (
-              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                <Clock className="w-3.5 h-3.5 text-purple-400" />
-                <span className="text-xs text-purple-300 font-medium">
+              <div className="mb-3 flex items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-3 py-2">
+                <Clock className="h-3.5 w-3.5 text-sky-600" />
+                <span className="text-xs font-medium text-sky-700">
                   Commenting at{" "}
                   <span className="font-mono">{formatTime(videoTimestamp)}</span>
                 </span>
               </div>
             )}
 
-            {/* Input */}
             <textarea
               ref={inputRef}
               value={text}
@@ -129,25 +124,25 @@ export function FeedbackDrawer({
                   : direction === "up"
                     ? "What should be different in the variant?"
                     : direction === "down"
-                      ? "What should the next version address?"
+                    ? "What should the next version address?"
                       : "Add your notes..."
               }
               rows={3}
-              className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-500 resize-none focus:outline-none focus:border-zinc-600 transition-colors"
+              className="surface-input w-full resize-none rounded-[22px] px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-sky-300 focus:outline-none"
             />
 
-            {/* Submit */}
             <div className="flex items-center justify-between mt-3">
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-slate-400">
                 Enter to submit · Shift+Enter for new line
               </p>
               <button
                 onClick={handleSubmit}
                 disabled={!text.trim()}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-30"
+                className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all disabled:opacity-30"
                 style={{
-                  backgroundColor: (label?.color ?? "#3b82f6") + "20",
+                  backgroundColor: (label?.color ?? "#3b82f6") + "14",
                   color: label?.color ?? "#3b82f6",
+                  boxShadow: `0 12px 28px ${(label?.color ?? "#3b82f6")}16`,
                 }}
               >
                 <Send className="w-3.5 h-3.5" />

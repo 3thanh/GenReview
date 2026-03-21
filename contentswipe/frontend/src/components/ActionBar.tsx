@@ -33,43 +33,44 @@ export function ActionBar({
   const directions: SwipeDirection[] = ["left", "down", "up", "right"];
 
   return (
-    <div className="flex items-center justify-center gap-3 py-4 px-6">
-      {/* Undo */}
-      <button
-        onClick={onUndo}
-        disabled={!canUndo || disabled}
-        className="w-10 h-10 rounded-full bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        title="Undo (⌘Z)"
-      >
-        <Undo2 className="w-4 h-4" />
-      </button>
+    <div className="px-4 py-4 sm:px-6">
+      <div className="surface-pill mx-auto flex w-fit items-center justify-center gap-3 rounded-full px-3 py-3">
+        <button
+          onClick={onUndo}
+          disabled={!canUndo || disabled}
+          className="surface-muted flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition-all hover:-translate-y-0.5 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+          title="Undo (⌘Z)"
+        >
+          <Undo2 className="h-4 w-4" />
+        </button>
 
-      {/* Main action buttons */}
-      {directions.map((dir) => {
-        const label = persona.swipeLabels[dir];
-        const Icon = DIRECTION_ICONS[dir];
-        const isRight = dir === "right";
-        const isLeft = dir === "left";
-        const size = isRight || isLeft ? "w-14 h-14" : "w-11 h-11";
-        const iconSize = isRight || isLeft ? "w-6 h-6" : "w-5 h-5";
+        {directions.map((dir) => {
+          const label = persona.swipeLabels[dir];
+          const Icon = DIRECTION_ICONS[dir];
+          const isRight = dir === "right";
+          const isLeft = dir === "left";
+          const size = isRight || isLeft ? "h-14 w-14" : "h-11 w-11";
+          const iconSize = isRight || isLeft ? "w-6 h-6" : "w-5 h-5";
 
-        return (
-          <button
-            key={dir}
-            onClick={() => onSwipe(dir)}
-            disabled={disabled}
-            className={`${size} rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed`}
-            style={{
-              borderColor: label.color + "60",
-              color: label.color,
-              backgroundColor: label.color + "10",
-            }}
-            title={`${label.action} (${label.shortcut})`}
-          >
-            <Icon className={iconSize} />
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={dir}
+              onClick={() => onSwipe(dir)}
+              disabled={disabled}
+              className={`${size} flex items-center justify-center rounded-full border transition-all hover:-translate-y-0.5 hover:scale-[1.03] active:scale-95 disabled:cursor-not-allowed disabled:opacity-30`}
+              style={{
+                borderColor: label.color + "35",
+                color: label.color,
+                backgroundColor: label.color + "14",
+                boxShadow: `0 12px 30px ${label.color}18`,
+              }}
+              title={`${label.action} (${label.shortcut})`}
+            >
+              <Icon className={iconSize} />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ const OPTIONS: Array<{
 
 export function FeedSourceToggle({ value, onChange }: FeedSourceToggleProps) {
   return (
-    <div className="inline-flex rounded-2xl border border-zinc-800 bg-zinc-950/90 p-1 shadow-[0_14px_40px_rgba(0,0,0,0.32)]">
+    <div className="surface-pill inline-flex rounded-[22px] p-1">
       {OPTIONS.map((option) => {
         const isActive = option.value === value;
 
@@ -35,13 +35,13 @@ export function FeedSourceToggle({ value, onChange }: FeedSourceToggleProps) {
             onClick={() => onChange(option.value)}
             className={`rounded-[14px] px-4 py-2 text-left transition ${
               isActive
-                ? "bg-zinc-100 text-zinc-950"
-                : "text-zinc-300 hover:bg-zinc-900 hover:text-white"
+                ? "bg-slate-900 text-white shadow-[0_12px_28px_rgba(15,23,42,0.16)]"
+                : "text-slate-500 hover:bg-white hover:text-slate-900"
             }`}
             aria-pressed={isActive}
           >
             <p className="text-sm font-semibold">{option.label}</p>
-            <p className={`text-[11px] ${isActive ? "text-zinc-700" : "text-zinc-500"}`}>
+            <p className={`text-[11px] ${isActive ? "text-white/70" : "text-slate-400"}`}>
               {option.caption}
             </p>
           </button>
