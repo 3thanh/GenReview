@@ -11,18 +11,23 @@ const POLL_INTERVAL_MS = 5_000;
 interface QueuedJob {
   id: string;
   prompt: string;
-  content_queue_id: string | null;
+  content_item_id: string | null;
   source_card_id: string | null;
   job_type: string;
 }
 
 async function claimNextJob(): Promise<QueuedJob | null> {
-  const { data: jobs } = await supabase
+  const { data: jobs, error: queryErr } = await supabase
     .from("generation_jobs")
     .select("*")
     .eq("status", "queued")
     .order("created_at", { ascending: true })
     .limit(1);
+
+  if (queryErr) {
+    console.error("[POLL] Query error:", queryErr.message);
+    return null;
+  }
 
   if (!jobs?.length) return null;
 
@@ -52,20 +57,12 @@ async function uploadToStorage(
   return data.publicUrl;
 }
 
-/**
- * Full pipeline for a single job:
- * 1. Plan script (Gemini)
- * 2. Generate audio (ElevenLabs) + video (Veo) in PARALLEL
- * 3. Compose final video (FFmpeg)
- * 4. Upload to Supabase Storage
- */
 async function processJob(job: QueuedJob): Promise<void> {
   console.log(`\n${"=".repeat(60)}`);
   console.log(`Job ${job.id} (${job.job_type})`);
   console.log(`${"=".repeat(60)}`);
 
   try {
-    // --- Phase 1: Script Planning ---
     console.log("\n[PHASE 1] Planning script with Gemini...");
 
     const businessContext = await getBusinessContext(job);
@@ -80,18 +77,17 @@ async function processJob(job: QueuedJob): Promise<void> {
     console.log(`  ${script.scenes.length} scenes, ${script.voiceover.length} VO lines, ${script.sfx.length} SFX cues`);
     console.log(`  Duration: ${script.totalDurationSeconds}s`);
 
-    // Update content_queue with the script
-    if (job.content_queue_id) {
+    if (job.content_item_id) {
       await supabase
-        .from("content_queue")
+        .from("content_items")
         .update({
           title: script.title,
           script: formatScriptForDisplay(script),
+          generation_status: "script_planned",
         })
-        .eq("id", job.content_queue_id);
+        .eq("id", job.content_item_id);
     }
 
-    // --- Phase 2: Parallel Audio + Video Generation ---
     console.log("\n[PHASE 2] Generating audio + video in parallel...");
 
     const [audioResult, videoBuffer] = await Promise.all([
@@ -99,11 +95,9 @@ async function processJob(job: QueuedJob): Promise<void> {
       generateVideo(script.videoPrompt),
     ]);
 
-    // Write video to tmp for FFmpeg
     const tmpVideoPath = `/tmp/contentswipe-raw-${job.id}.mp4`;
     await writeFile(tmpVideoPath, videoBuffer);
 
-    // --- Phase 3: Compose ---
     console.log("\n[PHASE 3] Composing final video...");
 
     const finalBuffer = await composeVideo({
@@ -114,19 +108,21 @@ async function processJob(job: QueuedJob): Promise<void> {
       totalDuration: script.totalDurationSeconds,
     });
 
-    // --- Phase 4: Upload ---
     console.log("\n[PHASE 4] Uploading to Supabase Storage...");
     const videoUrl = await uploadToStorage(finalBuffer, job.id);
 
-    // Update content_queue with the final video
-    if (job.content_queue_id) {
+    if (job.content_item_id) {
       await supabase
-        .from("content_queue")
-        .update({ video_url: videoUrl, status: "pending" })
-        .eq("id", job.content_queue_id);
+        .from("content_items")
+        .update({
+          video_url: videoUrl,
+          review_status: "pending",
+          generation_status: "completed",
+          generation_job_id: job.id,
+        })
+        .eq("id", job.content_item_id);
     }
 
-    // Mark job completed
     await supabase
       .from("generation_jobs")
       .update({
@@ -148,6 +144,13 @@ async function processJob(job: QueuedJob): Promise<void> {
         completed_at: new Date().toISOString(),
       })
       .eq("id", job.id);
+
+    if (job.content_item_id) {
+      await supabase
+        .from("content_items")
+        .update({ generation_status: "failed" })
+        .eq("id", job.content_item_id);
+    }
   }
 }
 
@@ -156,18 +159,18 @@ async function getBusinessContext(job: QueuedJob): Promise<{
   description: string;
   websiteUrl?: string;
 }> {
-  if (job.content_queue_id) {
-    const { data: card } = await supabase
-      .from("content_queue")
+  if (job.content_item_id) {
+    const { data: item } = await supabase
+      .from("content_items")
       .select("business_id")
-      .eq("id", job.content_queue_id)
+      .eq("id", job.content_item_id)
       .single();
 
-    if (card?.business_id) {
+    if (item?.business_id) {
       const { data: biz } = await supabase
         .from("businesses")
         .select("*")
-        .eq("id", card.business_id)
+        .eq("id", item.business_id)
         .single();
 
       if (biz) {
@@ -182,7 +185,7 @@ async function getBusinessContext(job: QueuedJob): Promise<{
 
   return {
     name: "My Business",
-    description: "A business creating engaging short-form video content.",
+    description: "A business creating engaging short-form content.",
   };
 }
 
@@ -214,18 +217,22 @@ function formatScriptForDisplay(script: VideoScript): string {
 }
 
 async function runWorkerLoop(): Promise<void> {
-  console.log("ContentSwipe Video Worker — Split Pipeline");
+  console.log("ContentSwipe Generation Worker");
   console.log("Phase 1: Gemini script planning");
   console.log("Phase 2: ElevenLabs audio + Veo video (parallel)");
   console.log("Phase 3: FFmpeg composition");
   console.log(`\nPolling every ${POLL_INTERVAL_MS / 1000}s for queued jobs...\n`);
 
+  let pollCount = 0;
   while (true) {
+    pollCount++;
     const job = await claimNextJob();
 
     if (job) {
+      console.log(`[POLL #${pollCount}] Found job ${job.id}`);
       await processJob(job);
     } else {
+      if (pollCount <= 3) console.log(`[POLL #${pollCount}] No queued jobs found`);
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
     }
   }

@@ -34,7 +34,7 @@ export const CONTENT_CREATOR: Persona = {
   name: "Content Creator",
   description: "Review and approve AI-generated video scripts and social posts",
   icon: "video",
-  contentTypes: ["video_script", "linkedin_post"],
+  contentTypes: ["video", "social"],
   swipeLabels: {
     right: {
       action: "Approve",
@@ -55,10 +55,10 @@ export const CONTENT_CREATOR: Persona = {
       requiresFeedback: true,
     },
     down: {
-      action: "More Ideas",
+      action: "Star",
       shortcut: "↓",
-      color: "#3b82f6",
-      requiresFeedback: true,
+      color: "#f59e0b",
+      requiresFeedback: false,
     },
   },
   emptyStateMessage: "No content to review",
@@ -70,7 +70,7 @@ export const SUPPORT_AGENT: Persona = {
   name: "Support Agent",
   description: "Triage and respond to customer support tickets",
   icon: "headset",
-  contentTypes: ["support_reply"],
+  contentTypes: ["support"],
   swipeLabels: {
     right: {
       action: "Send Reply",
@@ -87,14 +87,14 @@ export const SUPPORT_AGENT: Persona = {
     up: {
       action: "Escalate",
       shortcut: "↑",
-      color: "#f59e0b",
+      color: "#a855f7",
       requiresFeedback: true,
     },
     down: {
-      action: "Use Template",
+      action: "Star",
       shortcut: "↓",
-      color: "#3b82f6",
-      requiresFeedback: true,
+      color: "#f59e0b",
+      requiresFeedback: false,
     },
   },
   emptyStateMessage: "Inbox zero — no tickets to review",
@@ -104,9 +104,9 @@ export const SUPPORT_AGENT: Persona = {
 export const SOCIAL_MANAGER: Persona = {
   id: "social-manager",
   name: "Social Manager",
-  description: "Review and schedule LinkedIn posts and social content",
+  description: "Review and schedule social content across channels",
   icon: "share",
-  contentTypes: ["linkedin_post"],
+  contentTypes: ["social"],
   swipeLabels: {
     right: {
       action: "Schedule",
@@ -127,10 +127,10 @@ export const SOCIAL_MANAGER: Persona = {
       requiresFeedback: true,
     },
     down: {
-      action: "Generate Alternatives",
+      action: "Star",
       shortcut: "↓",
-      color: "#3b82f6",
-      requiresFeedback: true,
+      color: "#f59e0b",
+      requiresFeedback: false,
     },
   },
   emptyStateMessage: "No posts to review",
@@ -142,7 +142,7 @@ export const ALL_CONTENT: Persona = {
   name: "Everything",
   description: "All content types in a single feed",
   icon: "layers",
-  contentTypes: ["video_script", "linkedin_post", "support_reply"],
+  contentTypes: ["support", "social", "video"],
   swipeLabels: {
     right: {
       action: "Approve",
@@ -163,10 +163,10 @@ export const ALL_CONTENT: Persona = {
       requiresFeedback: true,
     },
     down: {
-      action: "More Ideas",
+      action: "Star",
       shortcut: "↓",
-      color: "#3b82f6",
-      requiresFeedback: true,
+      color: "#f59e0b",
+      requiresFeedback: false,
     },
   },
   emptyStateMessage: "Nothing to review right now",
@@ -202,10 +202,6 @@ export function unregisterPersona(id: PersonaId): boolean {
   return customPersonas.delete(id);
 }
 
-/**
- * Build a custom persona from partial overrides on top of a base.
- * Useful for quick persona creation in the UI.
- */
 export function createPersona(
   id: PersonaId,
   overrides: Partial<Omit<Persona, "id">> & { name: string; contentTypes: ContentType[] }
@@ -224,11 +220,6 @@ export function createPersona(
   return persona;
 }
 
-/**
- * Given a content type, find the best-matching persona.
- * Returns the most specific persona (fewest content types) that
- * includes the given type.
- */
 export function personaForContentType(
   contentType: ContentType
 ): Persona | undefined {

@@ -1,5 +1,5 @@
 {
   "name": "Default Video Script",
-  "content_type": "video_script",
-  "template": "Create a short-form video script for {{business_name}}.\n\nBusiness description: {{business_description}}\nWebsite: {{website_url}}\n\nThe video should be engaging, approximately 15-30 seconds, suitable for social media (TikTok, Instagram Reels, YouTube Shorts).\n\nGenerate a compelling script with visual directions.\n{{#if style_notes}}\nStyle notes: {{style_notes}}\n{{/if}}"
+  "content_type": "video",
+  "template": "Create a short-form video script for {{business_name}}.\n\nBusiness description: {{business_description}}\nWebsite: {{website_url}}\n\nThe video should be engaging, approximately 15-30 seconds, suitable for social media (TikTok, Instagram Reels, YouTube Shorts).\n\nGenerate a compelling script with visual directions.\n{{#if style_notes}}\nStyle notes: {{style_notes}}\n{{/if}}\n{{#if content_type}}\nContent type: {{content_type}}\n{{/if}}\n{{#if channel}}\nTarget channel: {{channel}}\n{{/if}}"
 }

@@ -18,17 +18,18 @@ export interface PromptContext {
   style_notes?: string;
   feedback?: string;
   original_script?: string;
+  original_text?: string;
+  content_type?: string;
+  channel?: string;
 }
 
 function resolveTemplate(template: string, ctx: PromptContext): string {
   let result = template;
 
-  // Simple {{variable}} replacement
   for (const [key, value] of Object.entries(ctx)) {
     result = result.replaceAll(`{{${key}}}`, value ?? "");
   }
 
-  // Handle {{#if variable}}...{{/if}} blocks
   result = result.replace(
     /\{\{#if (\w+)\}\}\n?([\s\S]*?)\{\{\/if\}\}/g,
     (_, varName: string, content: string) => {
@@ -37,16 +38,12 @@ function resolveTemplate(template: string, ctx: PromptContext): string {
     }
   );
 
-  // Clean up any leftover unreplaced variables
   result = result.replace(/\{\{[^}]+\}\}/g, "");
   result = result.replace(/\n{3,}/g, "\n\n").trim();
 
   return result;
 }
 
-/**
- * Fetch the template from Supabase first (override), fall back to local JSON.
- */
 async function getTemplate(
   templateName: string,
   contentType: ContentType
@@ -79,45 +76,41 @@ function businessToContext(
   };
 }
 
-/**
- * Generate a prompt for initial content creation.
- */
 export async function buildInitialPrompt(
   business: Business,
+  contentType: ContentType = "video",
   styleNotes?: string
 ): Promise<string> {
-  const template = await getTemplate("Default Video Script", "video_script");
+  const template = await getTemplate("Default Video Script", contentType);
   return resolveTemplate(
     template,
-    businessToContext(business, { style_notes: styleNotes })
+    businessToContext(business, { style_notes: styleNotes, content_type: contentType })
   );
 }
 
-/**
- * Generate a prompt for creating a variant of an existing card.
- */
 export async function buildVariantPrompt(
   business: Business,
-  originalCard: ContentItem,
+  originalItem: ContentItem,
   feedback: string
 ): Promise<string> {
-  const template = await getTemplate("Variant Modifier", "video_script");
+  const template = await getTemplate("Variant Modifier", originalItem.content_type);
   return resolveTemplate(
     template,
     businessToContext(business, {
-      original_script: originalCard.script ?? originalCard.description ?? "",
+      original_script: originalItem.script ?? "",
+      original_text: originalItem.body_text ?? "",
       feedback,
+      content_type: originalItem.content_type,
+      channel: originalItem.channel ?? undefined,
     })
   );
 }
 
-/**
- * Generate a prompt for brainstorming new ideas.
- */
 export async function buildBrainstormPrompt(
   business: Business,
+  contentType: ContentType = "video",
   feedback?: string
 ): Promise<string> {
-  const template = await getTemplate("Brainstorm Ideas", "video_script");
-  return resolveTemplate(template, businessToContext(business, { feedback }));
+  const template = await getTemplate("Brainstorm Ideas", contentType);
+  return resolveTemplate(template, businessToContext(business, { feedback, content_type: contentType }));
 }

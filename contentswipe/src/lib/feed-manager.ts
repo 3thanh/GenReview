@@ -3,7 +3,8 @@ import {
   approveCard,
   rejectCard,
   requestVariant,
-  requestMoreIdeas,
+  starCard,
+  unstarCard,
   undoAction,
   subscribeToFeedChanges,
 } from "./content-api.js";
@@ -33,22 +34,6 @@ export interface FeedManagerOptions {
   enableRealtime?: boolean;
 }
 
-/**
- * Stateful feed orchestrator for the swipe UI.
- *
- * Manages a card queue, handles prefetching, tracks undo history,
- * and provides session stats. Supports persona switching to change
- * what content types appear and what each swipe direction means.
- *
- * Usage:
- *   const feed = new FeedManager({ persona: "content-creator" });
- *   await feed.start();
- *   const card = feed.currentCard();
- *   console.log(feed.swipeLabels); // { right: "Approve", left: "Reject", ... }
- *   await feed.swipeRight();
- *   await feed.switchPersona("support-agent"); // flushes queue, reloads
- *   feed.stop();
- */
 export class FeedManager {
   private queue: ContentItem[] = [];
   private seenIds = new Set<string>();
@@ -66,7 +51,7 @@ export class FeedManager {
   private sessionStart = 0;
   private lastCardShownAt = 0;
   private cardTimes: number[] = [];
-  private counts = { approved: 0, rejected: 0, variants: 0, ideas: 0, undos: 0 };
+  private counts = { approved: 0, rejected: 0, variants: 0, starred: 0, undos: 0 };
   private personaSwitchCount = 0;
 
   private listeners = new Set<(event: FeedEvent) => void>();
@@ -119,12 +104,6 @@ export class FeedManager {
     return listPersonas();
   }
 
-  /**
-   * Switch to a different persona mid-session.
-   * Flushes the current queue, resets seen tracking for the new
-   * context, and reloads cards matching the new persona's content types.
-   * Undo stack is preserved so you can undo across persona switches.
-   */
   async switchPersona(personaOrId: PersonaId | Persona): Promise<void> {
     const next = resolvePersona(personaOrId);
     if (next.id === this.activePersona.id) return;
@@ -165,41 +144,39 @@ export class FeedManager {
     return this.queue.length === 0;
   }
 
-  /**
-   * Approve the current card and advance.
-   * Returns the next card (or null if queue is empty).
-   */
   async swipeRight(): Promise<ContentItem | null> {
     return this.performSwipe("right");
   }
 
-  /**
-   * Reject the current card and advance.
-   */
   async swipeLeft(feedback?: string): Promise<ContentItem | null> {
     return this.performSwipe("left", feedback);
   }
 
-  /**
-   * Request a variant of the current card and advance.
-   * Feedback is required to guide the variant.
-   */
   async swipeUp(feedback: string): Promise<ContentItem | null> {
     return this.performSwipe("up", feedback);
   }
 
   /**
-   * Request more ideas based on the current card and advance.
-   * Feedback is required to guide brainstorming.
+   * Star/unstar the current card. Does NOT advance the queue —
+   * starred items remain reviewable.
    */
-  async swipeDown(feedback: string): Promise<ContentItem | null> {
-    return this.performSwipe("down", feedback);
+  async swipeDown(): Promise<ContentItem | null> {
+    const card = this.currentCard();
+    if (!card) return null;
+
+    const updatedCard = card.starred
+      ? await unstarCard(card.id)
+      : await starCard(card.id);
+
+    this.counts.starred++;
+
+    const idx = this.queue.findIndex((c) => c.id === card.id);
+    if (idx !== -1) this.queue[idx] = updatedCard;
+
+    this.emit({ type: "starred", card: updatedCard });
+    return updatedCard;
   }
 
-  /**
-   * Undo the last swipe. The card is restored to pending and
-   * placed back at the front of the queue.
-   */
   async undo(): Promise<ContentItem | null> {
     const lastAction = this.undoStack.pop();
     if (!lastAction) return null;
@@ -228,6 +205,10 @@ export class FeedManager {
     direction: SwipeDirection,
     feedback?: string
   ): Promise<ContentItem | null> {
+    if (direction === "down") {
+      return this.swipeDown();
+    }
+
     const card = this.queue.shift();
     if (!card) return null;
 
@@ -238,7 +219,7 @@ export class FeedManager {
       cardId: card.id,
       direction,
       feedback,
-      previousStatus: card.status,
+      previousStatus: card.review_status,
       timestamp: Date.now(),
     };
 
@@ -257,10 +238,8 @@ export class FeedManager {
         updatedCard = await requestVariant(card.id, feedback!);
         this.counts.variants++;
         break;
-      case "down":
-        updatedCard = await requestMoreIdeas(card.id, feedback!);
-        this.counts.ideas++;
-        break;
+      default:
+        throw new Error(`Unexpected direction: ${direction}`);
     }
 
     this.undoStack.push(action);
@@ -284,7 +263,6 @@ export class FeedManager {
   private async loadMore(): Promise<void> {
     const types = this.activePersona.contentTypes;
 
-    // Fetch for each content type the persona covers, then merge & sort
     const pages = await Promise.all(
       types.map((ct) =>
         fetchFeed({
@@ -305,7 +283,6 @@ export class FeedManager {
           new Date(b.created_at ?? 0).getTime()
       );
 
-    // Deduplicate in case of overlap
     const seen = new Set(this.queue.map((c) => c.id));
     const newCards = allCards.filter((c) => !seen.has(c.id));
 
@@ -351,7 +328,7 @@ export class FeedManager {
   private handleRealtimeEvent(event: FeedChangeEvent): void {
     if (!this.cardMatchesPersona(event.card)) return;
 
-    if (event.type === "insert" && event.card.status === "pending") {
+    if (event.type === "insert" && event.card.review_status === "pending") {
       if (!this.seenIds.has(event.card.id)) {
         this.queue.push(event.card);
         this.emit({ type: "card_added_realtime", card: event.card });
@@ -361,8 +338,8 @@ export class FeedManager {
 
     if (
       event.type === "update" &&
-      event.oldStatus !== "pending" &&
-      event.card.status === "pending"
+      event.oldReviewStatus !== "pending" &&
+      event.card.review_status === "pending"
     ) {
       if (!this.seenIds.has(event.card.id)) {
         this.queue.push(event.card);
@@ -371,7 +348,7 @@ export class FeedManager {
       return;
     }
 
-    if (event.type === "update" && event.card.status !== "pending") {
+    if (event.type === "update" && event.card.review_status !== "pending") {
       const idx = this.queue.findIndex((c) => c.id === event.card.id);
       if (idx !== -1) {
         this.queue.splice(idx, 1);
@@ -403,8 +380,7 @@ export class FeedManager {
     const totalSwiped =
       this.counts.approved +
       this.counts.rejected +
-      this.counts.variants +
-      this.counts.ideas;
+      this.counts.variants;
 
     const totalTime = this.cardTimes.reduce((a, b) => a + b, 0);
 
@@ -415,7 +391,7 @@ export class FeedManager {
       approved: this.counts.approved,
       rejected: this.counts.rejected,
       variantsRequested: this.counts.variants,
-      ideasRequested: this.counts.ideas,
+      starred: this.counts.starred,
       undoCount: this.counts.undos,
       avgTimePerCardMs: totalSwiped > 0 ? totalTime / totalSwiped : 0,
       cardTimes: [...this.cardTimes],
@@ -442,6 +418,7 @@ export type FeedEvent =
   | { type: "session_ended"; stats: SessionStats }
   | { type: "persona_switched"; from: Persona; to: Persona }
   | { type: "swiped"; card: ContentItem; direction: SwipeDirection; feedback?: string }
+  | { type: "starred"; card: ContentItem }
   | { type: "undo"; card: ContentItem }
   | { type: "cards_loaded"; count: number }
   | { type: "queue_empty" }

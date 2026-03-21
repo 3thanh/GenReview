@@ -1,8 +1,9 @@
 import { supabase } from "./supabase.js";
 import type {
+  Json,
   ContentItem,
-  ContentInsert,
-  ContentStatus,
+  ContentItemInsert,
+  ReviewStatus,
   ContentType,
   FeedOptions,
   FeedPage,
@@ -10,36 +11,81 @@ import type {
   FeedStats,
   FeedChangeEvent,
   GenerationJob,
+  Session,
+  SessionInsert,
+  ReviewEventInsert,
 } from "../types/database.js";
 
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
+// ── Session management ──────────────────────────────────────────
+
+export async function createSession(params: {
+  businessId: string;
+  name: string;
+}): Promise<Session> {
+  const { data, error } = await supabase
+    .from("sessions")
+    .insert({
+      business_id: params.businessId,
+      name: params.name,
+    } satisfies SessionInsert)
+    .select()
+    .single();
+
+  if (error || !data) throw new Error(`Failed to create session: ${error?.message}`);
+  return data;
+}
+
+export async function listSessions(businessId?: string): Promise<Session[]> {
+  let query = supabase
+    .from("sessions")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (businessId) query = query.eq("business_id", businessId);
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to list sessions: ${error.message}`);
+  return data ?? [];
+}
+
+export async function getSession(id: string): Promise<Session | null> {
+  const { data } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("id", id)
+    .single();
+  return data;
+}
+
 // ── Feed fetching ───────────────────────────────────────────────
 
-/**
- * Paginated feed of cards ready for swiping.
- * Uses cursor-based pagination (cursor = created_at of last card).
- */
 export async function fetchFeed(options: FeedOptions = {}): Promise<FeedPage> {
   const limit = Math.min(options.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
 
   let countQuery = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*", { count: "exact", head: true })
-    .eq("status", "pending");
+    .eq("review_status", "pending");
 
   let query = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
-    .eq("status", "pending")
+    .eq("review_status", "pending")
     .order("created_at", { ascending: true })
     .limit(limit);
 
   if (options.businessId) {
     query = query.eq("business_id", options.businessId);
     countQuery = countQuery.eq("business_id", options.businessId);
+  }
+
+  if (options.sessionId) {
+    query = query.eq("session_id", options.sessionId);
+    countQuery = countQuery.eq("session_id", options.sessionId);
   }
 
   if (options.contentType) {
@@ -71,16 +117,13 @@ export async function fetchFeed(options: FeedOptions = {}): Promise<FeedPage> {
   };
 }
 
-/**
- * Simple fetch of all pending cards (no pagination).
- */
 export async function fetchPendingCards(
   businessId?: string
 ): Promise<ContentItem[]> {
   let query = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
-    .eq("status", "pending")
+    .eq("review_status", "pending")
     .order("created_at", { ascending: true });
 
   if (businessId) query = query.eq("business_id", businessId);
@@ -90,12 +133,9 @@ export async function fetchPendingCards(
   return data ?? [];
 }
 
-/**
- * Fetch a single card by ID with all its relationships loaded.
- */
 export async function fetchCardById(id: string): Promise<CardWithRelations> {
   const { data: card, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
     .eq("id", id)
     .single();
@@ -116,7 +156,7 @@ export async function fetchCardById(id: string): Promise<CardWithRelations> {
 
 async function fetchCardRaw(id: string): Promise<ContentItem | null> {
   const { data } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
     .eq("id", id)
     .single();
@@ -125,7 +165,7 @@ async function fetchCardRaw(id: string): Promise<ContentItem | null> {
 
 export async function fetchCardVariants(id: string): Promise<ContentItem[]> {
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
     .eq("variant_of", id)
     .order("created_at", { ascending: true });
@@ -154,12 +194,12 @@ export async function fetchCardAncestors(
 }
 
 async function fetchLatestJob(
-  contentQueueId: string
+  contentItemId: string
 ): Promise<GenerationJob | null> {
   const { data } = await supabase
     .from("generation_jobs")
     .select("*")
-    .eq("content_queue_id", contentQueueId)
+    .eq("content_item_id", contentItemId)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
@@ -169,11 +209,13 @@ async function fetchLatestJob(
 // ── Swipe actions ───────────────────────────────────────────────
 
 export async function approveCard(id: string): Promise<ContentItem> {
+  const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "approved" as ContentStatus,
-      updated_at: new Date().toISOString(),
+      review_status: "approved" as ReviewStatus,
+      reviewed_at: now,
+      updated_at: now,
     })
     .eq("id", id)
     .select()
@@ -185,14 +227,16 @@ export async function approveCard(id: string): Promise<ContentItem> {
 
 export async function rejectCard(
   id: string,
-  feedback?: string
+  reviewNote?: string
 ): Promise<ContentItem> {
+  const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "rejected" as ContentStatus,
-      feedback: feedback ?? null,
-      updated_at: new Date().toISOString(),
+      review_status: "rejected" as ReviewStatus,
+      review_note: reviewNote ?? null,
+      reviewed_at: now,
+      updated_at: now,
     })
     .eq("id", id)
     .select()
@@ -204,14 +248,16 @@ export async function rejectCard(
 
 export async function requestVariant(
   id: string,
-  feedback: string
+  reviewNote: string
 ): Promise<ContentItem> {
+  const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "needs_variant" as ContentStatus,
-      feedback,
-      updated_at: new Date().toISOString(),
+      review_status: "needs_edit" as ReviewStatus,
+      review_note: reviewNote,
+      reviewed_at: now,
+      updated_at: now,
     })
     .eq("id", id)
     .select()
@@ -223,49 +269,56 @@ export async function requestVariant(
   return data;
 }
 
-export async function requestMoreIdeas(
-  id: string,
-  feedback: string
-): Promise<ContentItem> {
+export async function starCard(id: string): Promise<ContentItem> {
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "needs_ideas" as ContentStatus,
-      feedback,
+      starred: true,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
     .select()
     .single();
 
-  if (error || !data) {
-    throw new Error(`Failed to request ideas: ${error?.message}`);
-  }
+  if (error || !data) throw new Error(`Failed to star: ${error?.message}`);
   return data;
 }
 
-/**
- * Revert a card back to pending (undo a swipe).
- */
+export async function unstarCard(id: string): Promise<ContentItem> {
+  const { data, error } = await supabase
+    .from("content_items")
+    .update({
+      starred: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error || !data) throw new Error(`Failed to unstar: ${error?.message}`);
+  return data;
+}
+
 export async function undoAction(id: string): Promise<ContentItem> {
   const { data: card, error: fetchErr } = await supabase
-    .from("content_queue")
-    .select("status")
+    .from("content_items")
+    .select("review_status")
     .eq("id", id)
     .single();
 
   if (fetchErr || !card) {
     throw new Error(`Card not found for undo: ${fetchErr?.message}`);
   }
-  if (card.status === "pending") {
+  if (card.review_status === "pending") {
     throw new Error("Card is already pending — nothing to undo");
   }
 
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "pending" as ContentStatus,
-      feedback: null,
+      review_status: "pending" as ReviewStatus,
+      review_note: null,
+      reviewed_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -276,19 +329,37 @@ export async function undoAction(id: string): Promise<ContentItem> {
   return data;
 }
 
+// ── Review events ───────────────────────────────────────────────
+
+export async function logReviewEvent(params: {
+  contentItemId: string;
+  action: string;
+  note?: string;
+  actorId?: string;
+}): Promise<void> {
+  await supabase.from("review_events").insert({
+    content_item_id: params.contentItemId,
+    action: params.action,
+    note: params.note ?? null,
+    actor_id: params.actorId ?? null,
+  } satisfies ReviewEventInsert);
+}
+
 // ── Batch operations ────────────────────────────────────────────
 
 export async function batchApprove(ids: string[]): Promise<number> {
   if (!ids.length) return 0;
 
+  const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "approved" as ContentStatus,
-      updated_at: new Date().toISOString(),
+      review_status: "approved" as ReviewStatus,
+      reviewed_at: now,
+      updated_at: now,
     })
     .in("id", ids)
-    .eq("status", "pending")
+    .eq("review_status", "pending")
     .select("id");
 
   if (error) throw new Error(`Batch approve failed: ${error.message}`);
@@ -297,19 +368,21 @@ export async function batchApprove(ids: string[]): Promise<number> {
 
 export async function batchReject(
   ids: string[],
-  feedback?: string
+  reviewNote?: string
 ): Promise<number> {
   if (!ids.length) return 0;
 
+  const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .update({
-      status: "rejected" as ContentStatus,
-      feedback: feedback ?? null,
-      updated_at: new Date().toISOString(),
+      review_status: "rejected" as ReviewStatus,
+      review_note: reviewNote ?? null,
+      reviewed_at: now,
+      updated_at: now,
     })
     .in("id", ids)
-    .eq("status", "pending")
+    .eq("review_status", "pending")
     .select("id");
 
   if (error) throw new Error(`Batch reject failed: ${error.message}`);
@@ -320,19 +393,30 @@ export async function batchReject(
 
 export async function triggerGeneration(params: {
   businessId?: string;
+  sessionId?: string;
   prompt: string;
   contentType?: ContentType;
+  channel?: string;
+  sourceType?: string;
+  sourceRef?: string;
+  sourceBundle?: Json;
   title?: string;
 }): Promise<{ card: ContentItem; jobId: string }> {
   const { data: card, error: cardErr } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .insert({
       title: params.title ?? "Generating...",
-      description: params.prompt,
-      content_type: params.contentType ?? "video_script",
+      body_text: params.prompt,
+      content_type: params.contentType ?? "video",
       business_id: params.businessId ?? null,
-      status: "pending" as ContentStatus,
-    } satisfies ContentInsert)
+      session_id: params.sessionId ?? null,
+      channel: params.channel ?? null,
+      source_type: params.sourceType ?? "generated",
+      source_ref: params.sourceRef ?? null,
+      source_bundle: params.sourceBundle ?? null,
+      prompt_input_summary: params.prompt,
+      review_status: "pending" as ReviewStatus,
+    } satisfies ContentItemInsert)
     .select()
     .single();
 
@@ -343,7 +427,7 @@ export async function triggerGeneration(params: {
   const { data: job, error: jobErr } = await supabase
     .from("generation_jobs")
     .insert({
-      content_queue_id: card.id,
+      content_item_id: card.id,
       job_type: "initial",
       prompt: params.prompt,
     })
@@ -351,7 +435,7 @@ export async function triggerGeneration(params: {
     .single();
 
   if (jobErr || !job) {
-    await supabase.from("content_queue").delete().eq("id", card.id);
+    await supabase.from("content_items").delete().eq("id", card.id);
     throw new Error(`Failed to create job: ${jobErr?.message}`);
   }
 
@@ -360,15 +444,19 @@ export async function triggerGeneration(params: {
 
 export async function triggerBulkGeneration(params: {
   businessId?: string;
+  sessionId?: string;
   prompts: string[];
   contentType?: ContentType;
+  channel?: string;
 }): Promise<{ card: ContentItem; jobId: string }[]> {
   const results = await Promise.allSettled(
     params.prompts.map((prompt) =>
       triggerGeneration({
         businessId: params.businessId,
+        sessionId: params.sessionId,
         prompt,
         contentType: params.contentType,
+        channel: params.channel,
       })
     )
   );
@@ -381,11 +469,37 @@ export async function triggerBulkGeneration(params: {
     .map((r) => r.value);
 }
 
+// ── Content editing (triggers regeneration) ─────────────────────
+
+export async function editContentItem(
+  id: string,
+  updates: {
+    title?: string;
+    body_text?: string;
+    script?: string;
+    channel?: string;
+  }
+): Promise<ContentItem> {
+  const { data, error } = await supabase
+    .from("content_items")
+    .update({
+      ...updates,
+      review_status: "needs_edit" as ReviewStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error || !data) throw new Error(`Failed to edit: ${error?.message}`);
+  return data;
+}
+
 // ── History & search ────────────────────────────────────────────
 
 export async function fetchSwipeHistory(options: {
   businessId?: string;
-  status?: ContentStatus;
+  reviewStatus?: ReviewStatus;
   limit?: number;
   offset?: number;
 }): Promise<{ cards: ContentItem[]; total: number }> {
@@ -393,14 +507,14 @@ export async function fetchSwipeHistory(options: {
   const offset = options.offset ?? 0;
 
   let query = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*", { count: "exact" })
-    .not("status", "eq", "pending")
+    .not("review_status", "eq", "pending")
     .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (options.businessId) query = query.eq("business_id", options.businessId);
-  if (options.status) query = query.eq("status", options.status);
+  if (options.reviewStatus) query = query.eq("review_status", options.reviewStatus);
 
   const { data, error, count } = await query;
   if (error) throw new Error(`Failed to fetch history: ${error.message}`);
@@ -414,9 +528,9 @@ export async function searchCards(
   const limit = options.limit ?? 20;
 
   let q = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
-    .or(`title.ilike.%${queryText}%,description.ilike.%${queryText}%`)
+    .or(`title.ilike.%${queryText}%,body_text.ilike.%${queryText}%`)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -431,37 +545,55 @@ export async function searchCards(
 
 export async function uploadContent(params: {
   title: string;
-  description?: string;
+  bodyText?: string;
   script?: string;
   businessId?: string;
+  sessionId?: string;
   contentType?: ContentType;
+  channel?: string;
+  sourceType?: string;
+  imageFile?: { buffer: Buffer; filename: string };
   videoFile?: { buffer: Buffer; filename: string };
 }): Promise<ContentItem> {
   let video_url: string | null = null;
+  let image_url: string | null = null;
 
   if (params.videoFile) {
     const path = `uploads/${Date.now()}-${params.videoFile.filename}`;
     const { error: uploadErr } = await supabase.storage
       .from("content-videos")
       .upload(path, params.videoFile.buffer, { contentType: "video/mp4" });
-    if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
-
-    const { data } = supabase.storage
-      .from("content-videos")
-      .getPublicUrl(path);
+    if (uploadErr) throw new Error(`Video upload failed: ${uploadErr.message}`);
+    const { data } = supabase.storage.from("content-videos").getPublicUrl(path);
     video_url = data.publicUrl;
   }
 
+  if (params.imageFile) {
+    const ext = params.imageFile.filename.split(".").pop() ?? "png";
+    const contentType = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`;
+    const path = `uploads/${Date.now()}-${params.imageFile.filename}`;
+    const { error: uploadErr } = await supabase.storage
+      .from("content-videos")
+      .upload(path, params.imageFile.buffer, { contentType });
+    if (uploadErr) throw new Error(`Image upload failed: ${uploadErr.message}`);
+    const { data } = supabase.storage.from("content-videos").getPublicUrl(path);
+    image_url = data.publicUrl;
+  }
+
   const { data, error } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .insert({
       title: params.title,
-      description: params.description ?? null,
+      body_text: params.bodyText ?? null,
       script: params.script ?? null,
       video_url,
-      content_type: params.contentType ?? "video_script",
+      image_url,
+      content_type: params.contentType ?? "video",
+      channel: params.channel ?? null,
+      source_type: params.sourceType ?? "upload",
       business_id: params.businessId ?? null,
-    } satisfies ContentInsert)
+      session_id: params.sessionId ?? null,
+    } satisfies ContentItemInsert)
     .select()
     .single();
 
@@ -472,20 +604,19 @@ export async function uploadContent(params: {
 // ── Analytics ───────────────────────────────────────────────────
 
 export async function fetchFeedStats(businessId?: string): Promise<FeedStats> {
-  const statuses: ContentStatus[] = [
+  const statuses: ReviewStatus[] = [
     "pending",
     "approved",
     "rejected",
-    "needs_variant",
-    "needs_ideas",
+    "needs_edit",
   ];
 
   const counts = await Promise.all(
     statuses.map(async (status) => {
       let q = supabase
-        .from("content_queue")
+        .from("content_items")
         .select("*", { count: "exact", head: true })
-        .eq("status", status);
+        .eq("review_status", status);
       if (businessId) q = q.eq("business_id", businessId);
       const { count } = await q;
       return { status, count: count ?? 0 };
@@ -497,9 +628,9 @@ export async function fetchFeedStats(businessId?: string): Promise<FeedStats> {
   const decided = (map.approved ?? 0) + (map.rejected ?? 0);
 
   let oldestQuery = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("created_at")
-    .eq("status", "pending")
+    .eq("review_status", "pending")
     .order("created_at", { ascending: true })
     .limit(1);
   if (businessId) oldestQuery = oldestQuery.eq("business_id", businessId);
@@ -509,7 +640,7 @@ export async function fetchFeedStats(businessId?: string): Promise<FeedStats> {
     Date.now() - 30 * 24 * 60 * 60 * 1000
   ).toISOString();
   let recentQuery = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*", { count: "exact", head: true })
     .gte("created_at", thirtyDaysAgo);
   if (businessId) recentQuery = recentQuery.eq("business_id", businessId);
@@ -519,8 +650,7 @@ export async function fetchFeedStats(businessId?: string): Promise<FeedStats> {
     pending: map.pending ?? 0,
     approved: map.approved ?? 0,
     rejected: map.rejected ?? 0,
-    needsVariant: map.needs_variant ?? 0,
-    needsIdeas: map.needs_ideas ?? 0,
+    needsEdit: map.needs_edit ?? 0,
     total,
     approvalRate: decided > 0 ? (map.approved ?? 0) / decided : 0,
     avgCardsPerDay: (recentCount ?? 0) / 30,
@@ -546,7 +676,7 @@ export async function fetchActiveJobs(
 ): Promise<GenerationJob[]> {
   const { data, error } = await supabase
     .from("generation_jobs")
-    .select("*, content_queue!generation_jobs_content_queue_id_fkey(business_id)")
+    .select("*, content_items!generation_jobs_content_item_id_fkey(business_id)")
     .in("status", ["queued", "processing"])
     .order("created_at", { ascending: true });
 
@@ -554,16 +684,13 @@ export async function fetchActiveJobs(
   if (!businessId) return data ?? [];
 
   return (data ?? []).filter((job: any) => {
-    const card = job.content_queue;
-    return card?.business_id === businessId;
+    const item = job.content_items;
+    return item?.business_id === businessId;
   });
 }
 
 // ── Realtime ────────────────────────────────────────────────────
 
-/**
- * Subscribe to all feed changes (inserts, updates, deletes).
- */
 export function subscribeToFeedChanges(
   callback: (event: FeedChangeEvent) => void,
   businessId?: string
@@ -575,7 +702,7 @@ export function subscribeToFeedChanges(
       {
         event: "*",
         schema: "public",
-        table: "content_queue",
+        table: "content_items",
         ...(businessId ? { filter: `business_id=eq.${businessId}` } : {}),
       },
       (payload) => {
@@ -590,10 +717,10 @@ export function subscribeToFeedChanges(
         const card: ContentItem =
           eventType === "delete" ? raw.old : raw.new;
 
-        const oldStatus: ContentItem["status"] | undefined =
-          eventType === "update" ? raw.old?.status : undefined;
+        const oldReviewStatus: ContentItem["review_status"] | undefined =
+          eventType === "update" ? raw.old?.review_status : undefined;
 
-        callback({ type: eventType, card, oldStatus });
+        callback({ type: eventType, card, oldReviewStatus });
       }
     )
     .subscribe();
@@ -603,17 +730,14 @@ export function subscribeToFeedChanges(
   };
 }
 
-/**
- * Subscribe only to new pending cards.
- */
 export function subscribeToNewCards(
   callback: (card: ContentItem) => void
 ): () => void {
   return subscribeToFeedChanges((event) => {
-    if (event.card.status === "pending") {
+    if (event.card.review_status === "pending") {
       if (
         event.type === "insert" ||
-        (event.type === "update" && event.oldStatus !== "pending")
+        (event.type === "update" && event.oldReviewStatus !== "pending")
       ) {
         callback(event.card);
       }
@@ -621,9 +745,6 @@ export function subscribeToNewCards(
   });
 }
 
-/**
- * Subscribe to a specific generation job's progress.
- */
 export function subscribeToJobUpdates(
   jobId: string,
   callback: (job: GenerationJob) => void

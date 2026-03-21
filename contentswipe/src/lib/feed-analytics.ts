@@ -1,7 +1,7 @@
 import { supabase } from "./supabase.js";
 import type {
   ContentItem,
-  ContentStatus,
+  ReviewStatus,
   ContentType,
   Business,
 } from "../types/database.js";
@@ -10,7 +10,7 @@ import type {
 
 export interface ContentPerformance {
   totalCards: number;
-  byStatus: Record<ContentStatus, number>;
+  byStatus: Record<ReviewStatus, number>;
   byContentType: Record<ContentType, number>;
   approvalRate: number;
   variantRequestRate: number;
@@ -38,7 +38,7 @@ export interface VariantAnalysis {
   originalTitle: string;
   variantCount: number;
   approvedVariants: number;
-  latestVariantStatus: ContentStatus;
+  latestVariantStatus: ReviewStatus;
   feedbackChain: string[];
 }
 
@@ -47,7 +47,7 @@ export interface VariantAnalysis {
 export async function getContentPerformance(
   businessId?: string
 ): Promise<ContentPerformance> {
-  let query = supabase.from("content_queue").select("*");
+  let query = supabase.from("content_items").select("*");
   if (businessId) query = query.eq("business_id", businessId);
 
   const { data: cards, error } = await query;
@@ -55,11 +55,11 @@ export async function getContentPerformance(
 
   const all = cards ?? [];
 
-  const byStatus = {} as Record<ContentStatus, number>;
+  const byStatus = {} as Record<ReviewStatus, number>;
   const byContentType = {} as Record<ContentType, number>;
 
   for (const card of all) {
-    byStatus[card.status] = (byStatus[card.status] ?? 0) + 1;
+    byStatus[card.review_status] = (byStatus[card.review_status] ?? 0) + 1;
     byContentType[card.content_type] =
       (byContentType[card.content_type] ?? 0) + 1;
   }
@@ -69,14 +69,14 @@ export async function getContentPerformance(
     decided > 0 ? (byStatus.approved ?? 0) / decided : 0;
 
   const variantRequested =
-    (byStatus.needs_variant ?? 0) +
+    (byStatus.needs_edit ?? 0) +
     all.filter((c) => c.variant_of !== null).length;
   const variantRequestRate =
     all.length > 0 ? variantRequested / all.length : 0;
 
   const decisioned = all.filter(
     (c) =>
-      c.status !== "pending" &&
+      c.review_status !== "pending" &&
       c.created_at &&
       c.updated_at &&
       c.updated_at !== c.created_at
@@ -107,7 +107,7 @@ export async function getBusinessLeaderboard(): Promise<
 > {
   const [{ data: businesses }, { data: cards }] = await Promise.all([
     supabase.from("businesses").select("*"),
-    supabase.from("content_queue").select("business_id, status"),
+    supabase.from("content_items").select("business_id, review_status"),
   ]);
 
   if (!businesses || !cards) return [];
@@ -131,9 +131,9 @@ export async function getBusinessLeaderboard(): Promise<
     if (!entry) continue;
 
     entry.totalCards++;
-    if (card.status === "approved") entry.approved++;
-    if (card.status === "rejected") entry.rejected++;
-    if (card.status === "pending") entry.pending++;
+    if (card.review_status === "approved") entry.approved++;
+    if (card.review_status === "rejected") entry.rejected++;
+    if (card.review_status === "pending") entry.pending++;
   }
 
   for (const entry of boardMap.values()) {
@@ -148,10 +148,6 @@ export async function getBusinessLeaderboard(): Promise<
 
 // ── Time-series activity ────────────────────────────────────────
 
-/**
- * Daily activity for the last N days.
- * Returns creation, approval, and rejection counts per day.
- */
 export async function getDailyActivity(
   days = 30,
   businessId?: string
@@ -161,8 +157,8 @@ export async function getDailyActivity(
   ).toISOString();
 
   let query = supabase
-    .from("content_queue")
-    .select("created_at, updated_at, status")
+    .from("content_items")
+    .select("created_at, updated_at, review_status")
     .gte("created_at", since);
   if (businessId) query = query.eq("business_id", businessId);
 
@@ -188,12 +184,12 @@ export async function getDailyActivity(
 
     if (
       card.updated_at &&
-      (card.status === "approved" || card.status === "rejected")
+      (card.review_status === "approved" || card.review_status === "rejected")
     ) {
       const day = card.updated_at.slice(0, 10);
       const point = dayMap.get(day);
       if (point) {
-        if (card.status === "approved") point.approved++;
+        if (card.review_status === "approved") point.approved++;
         else point.rejected++;
       }
     }
@@ -204,15 +200,11 @@ export async function getDailyActivity(
 
 // ── Variant analysis ────────────────────────────────────────────
 
-/**
- * Analyze cards that have spawned variants — shows how many
- * iterations it took to reach an approved version.
- */
 export async function getVariantAnalysis(
   businessId?: string
 ): Promise<VariantAnalysis[]> {
   let query = supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
     .not("variant_of", "is", null);
   if (businessId) query = query.eq("business_id", businessId);
@@ -232,7 +224,7 @@ export async function getVariantAnalysis(
   if (originalIds.length === 0) return [];
 
   const { data: originals } = await supabase
-    .from("content_queue")
+    .from("content_items")
     .select("*")
     .in("id", originalIds);
 
@@ -249,10 +241,10 @@ export async function getVariantAnalysis(
       originalId: original.id,
       originalTitle: original.title,
       variantCount: sorted.length,
-      approvedVariants: sorted.filter((v) => v.status === "approved").length,
-      latestVariantStatus: sorted[sorted.length - 1]?.status ?? original.status,
+      approvedVariants: sorted.filter((v) => v.review_status === "approved").length,
+      latestVariantStatus: sorted[sorted.length - 1]?.review_status ?? original.review_status,
       feedbackChain: [original, ...sorted]
-        .map((c) => c.feedback)
+        .map((c) => c.review_note)
         .filter((f): f is string => f !== null),
     });
   }
@@ -275,8 +267,8 @@ export async function getContentTypeBreakdown(
   businessId?: string
 ): Promise<ContentTypeStats[]> {
   let query = supabase
-    .from("content_queue")
-    .select("content_type, status");
+    .from("content_items")
+    .select("content_type, review_status");
   if (businessId) query = query.eq("business_id", businessId);
 
   const { data, error } = await query;
@@ -295,9 +287,9 @@ export async function getContentTypeBreakdown(
     };
 
     existing.total++;
-    if (card.status === "approved") existing.approved++;
-    if (card.status === "rejected") existing.rejected++;
-    if (card.status === "pending") existing.pending++;
+    if (card.review_status === "approved") existing.approved++;
+    if (card.review_status === "rejected") existing.rejected++;
+    if (card.review_status === "pending") existing.pending++;
 
     map.set(card.content_type, existing);
   }

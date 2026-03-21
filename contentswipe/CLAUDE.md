@@ -1,20 +1,64 @@
 # ContentSwipe
 
-A TikTok/Tinder-style content review app for AI-generated short-form video.
+An AI content QA + generation system. Studio defines what to generate → Pipeline produces content items → Feed is the review + decision layer.
 
 ## Quick Context
 
 - **UI** is built in Loveable (separate) — it reads/writes Supabase directly
-- **This repo** is the backend: generation pipeline, content API, feed manager, persona system
+- **This repo** is the backend: generation pipeline, content API, feed manager
 - **Supabase project:** `rnqkjfrwkyupkyvygtpg` at `https://rnqkjfrwkyupkyvygtpg.supabase.co`
+- **Content types:** support (screenshot-first), social (text-first), video (script/render states)
+- **V1 = one mixed feed** across all sessions, ~20 items, no multi-view/tabs/lanes
+
+## Data Model (V1)
+
+```
+business → session → content_item
+```
+
+### Tables
+
+| Table | Purpose |
+|-------|---------|
+| **businesses** | Business entities |
+| **sessions** | Creative sessions/campaigns within a business |
+| **content_items** | Core object — every card in the feed. Replaces old `content_queue`. |
+| **generation_jobs** | Pipeline work queue |
+| **prompt_templates** | Editable prompt templates |
+| **review_events** | (optional) Audit log for review actions |
+
+### content_items key fields
+
+- **Classification:** `content_type` (support/social/video), `channel` (intercom/linkedin/tiktok/etc.), `review_mode`, `source_type`
+- **Payload:** `title`, `body_text`, `script`, `image_url`, `video_url`, `thumbnail_url`
+- **Source provenance:** `source_ref`, `source_bundle` (JSON), `prompt_input_summary`
+- **Review:** `review_status` (pending/approved/rejected/needs_edit), `review_note`, `reviewed_by`, `reviewed_at`
+- **Special state:** `starred` (boolean), `down_arrow_designation`
+- **Generation:** `generation_job_id`, `generation_status`, `model_name`, `prompt_template_id`
+- **Lineage:** `parent_id`, `variant_of`
+
+## V1 Scope — What To Build
+
+- One mixed feed across all sessions (~20 items, cached for demo)
+- All three content types: support, social, video
+- One prompt → multiple content_items
+- Editing triggers regeneration (live generation inputs, not static edits)
+- Starred/special designation persisted in backend
+- Source-aware: every item retains source_type, source_ref, source_bundle
+- Channel-aware: channel field on every item
+- Variant lineage via parent_id / variant_of
+- Clean classification metadata for future views
+
+## V2 — Explicitly Out of Scope
+
+Do NOT build: multi-view feed, view system, persona-driven routing, advanced review modes, batch actions, undo system, advanced generation controls, brand/style kit, configurable tabs. System should remain compatible with these futures.
 
 ## What's Built
 
-- Supabase schema: `content_queue`, `businesses`, `generation_jobs`, `prompt_templates`
-- **Content API** (`src/lib/content-api.ts`): paginated feed, swipe actions (returns updated card), undo, batch ops, generation trigger, history, search, analytics, realtime (INSERT+UPDATE+DELETE)
-- **Feed Manager** (`src/lib/feed-manager.ts`): stateful swipe orchestrator with card queue, prefetching, undo stack, session stats, persona-aware filtering
-- **Persona System** (`src/lib/personas.ts`): switchable focus modes (Content Creator, Support Agent, Social Manager, Everything) — each persona defines which content types appear and custom swipe labels per direction
-- **Feed Analytics** (`src/lib/feed-analytics.ts`): performance metrics, business leaderboard, daily activity time-series, variant iteration analysis, content type breakdown
+- **Content API** (`src/lib/content-api.ts`): paginated feed, swipe actions, undo, batch ops, generation trigger, history, search, analytics, realtime
+- **Feed Manager** (`src/lib/feed-manager.ts`): stateful swipe orchestrator with card queue, prefetching, undo stack, session stats
+- **Persona System** (`src/lib/personas.ts`): switchable focus modes — config only in v1, does not drive feed routing
+- **Feed Analytics** (`src/lib/feed-analytics.ts`): performance metrics, leaderboard, time-series, variant analysis
 - **Generation Pipeline**: Gemini script → ElevenLabs audio + Veo video (parallel) → FFmpeg compose
 - **Feedback Loop**: watches for variant/ideas requests, creates new generation jobs
 - Prompt templates with Supabase overrides + local JSON defaults
@@ -28,44 +72,58 @@ npm run seed      # Seed test business + sample cards
 npm run typecheck # TypeScript check
 ```
 
-## What Needs Work
-
-See `SPEC.md` sections 4-5 for the full UI interaction spec (swipe feed + creation studio).
-The UI agent should focus on:
-1. Swipe feed: use `FeedManager` class — handles queue, prefetch, undo, persona switching
-2. Creation studio: chat interface, file uploads, session management
-3. Import functions from `content-api.ts` — all Supabase logic is wrapped, UI never calls supabase directly
-4. Realtime: `subscribeToFeedChanges()` for live card updates, `subscribeToJobUpdates()` for generation progress
-5. Persona switcher: read `feed.availablePersonas`, call `feed.switchPersona(id)`, render `feed.swipeLabels`
-
 ## Architecture
 
 ```
-User → Creation Studio (Loveable UI)
+User → Studio (Loveable UI)
          │
-         ├→ triggerGeneration() → content_queue + generation_jobs
+         ├→ triggerGeneration() → content_items + generation_jobs
+         │   (one prompt → multiple content_items)
          │
          ▼
-  Video Worker (this repo)
+  Generation Worker (this repo)
     Phase 1: Gemini plans script
     Phase 2: ElevenLabs audio ∥ Veo video
     Phase 3: FFmpeg compose
     Phase 4: Upload → Supabase Storage
          │
          ▼
-  content_queue updated with video_url
+  content_items updated (video_url, generation_status)
          │
          ▼
-  Swipe Feed (Loveable UI) ← subscribeToFeedChanges()
-    FeedManager orchestrates the queue
-    Persona system controls content type filter + swipe labels
-    →  approve/send   │  ← reject/discard+feedback
-    ↑  variant/escalate │  ↓ more ideas/template+feedback
+  Feed (Loveable UI) ← subscribeToFeedChanges()
+    Mixed feed — all content types, all sessions
+    Cards render by type: screenshot-first / text-first / video
+    →  approve       │  ← reject + review_note
+    ↑  variant       │  ↓ star/special designation
          │
          ▼
   Feedback Loop (this repo)
     Creates new generation jobs from feedback
 ```
+
+## Feed Contract
+
+Backend returns enough data for frontend to:
+- Render mixed feed with different card styles per content_type
+- Support editing + regeneration
+- Support starred state
+- Distinguish source types (screenshot vs text vs video)
+
+Backend does NOT hardcode UI assumptions or assume one layout for all cards.
+
+## Generation Contract
+
+**Inputs:** prompt/brief, uploaded assets, screenshots, URLs, references, personas (config only), style/brand context
+
+**Output:** multiple content_items per request, each with source provenance
+
+## Important Guardrails
+
+1. Metadata is clean and structured — no string parsing or implicit assumptions
+2. Content items are flexible — not all are text-first
+3. No hardcoded view assumptions — future views will filter by classification fields
+4. Future compatibility without overbuilding — classification fields exist, routing does not
 
 ## File Structure
 
@@ -74,8 +132,8 @@ src/
   lib/
     supabase.ts         — Supabase client init
     content-api.ts      — Full feed API (25+ functions)
-    feed-manager.ts     — Stateful FeedManager class with persona support
-    personas.ts         — Persona definitions + registry
+    feed-manager.ts     — Stateful FeedManager class
+    personas.ts         — Persona definitions + registry (config only in v1)
     feed-analytics.ts   — Performance metrics + reporting
   pipeline/
     script-planner.ts   — Phase 1: Gemini → structured VideoScript

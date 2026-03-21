@@ -1,18 +1,86 @@
 # ContentSwipe — Full Spec & Agent Handoff
 
-**Version:** 0.2 | **Status:** In Development
+**Version:** 0.3 | **Status:** In Development
 **Stack:** Supabase (DB + Storage + Realtime), Vercel (deploy), Gemini (script planning + video gen), ElevenLabs (TTS + SFX), FFmpeg (composition)
 
 ---
 
-## 1. Product Vision
+## 0. Product Framing
 
-A TikTok/Tinder-style content review app for AI-generated short-form video. Two main surfaces:
+ContentSwipe is an **AI content QA + generation system**, not just a generator.
 
-1. **Creation Studio** — ChatGPT-style interface to describe campaigns, upload context, and trigger generation
-2. **Swipe Feed** — Full-screen card review with keyboard shortcuts to approve/reject/request variants
+**Flow:**
 
-Content from all creation sessions consolidates into one unified feed.
+```
+Studio/Setup → Generation → Feed (review + decision layer)
+```
+
+- **Studio/Setup** defines what to generate (prompts, assets, context)
+- **Generation** produces content items (cards) via the pipeline
+- **Feed** is the review + decision layer where users approve, reject, edit, and regenerate
+
+Each content item is: **source-aware**, **channel-aware**, **reviewable**, **editable**, **regeneratable**.
+
+---
+
+## 1. V1 Core Scope
+
+### 1.1 Feed
+
+- **One feed only** — mixed feed of all content across all sessions
+- Default = effectively "All Content"
+- Cache results for demo purposes
+- Support ~20 items for now
+- Simple loading page is fine
+
+**Explicitly NOT in v1:**
+
+- Multi-view feed
+- Tabs / lanes
+- Routing between views
+- Filtering by persona/view
+
+### 1.2 Content Types (all in v1)
+
+All three content types are supported:
+
+| Type | Primary Asset | Notes |
+|------|--------------|-------|
+| **Support** | Screenshot | Represents support response context (Intercom-style). Do NOT assume text-first. |
+| **Social** | Text | User-defined channel (LinkedIn, etc.). Text-first but flexible. |
+| **Video** | Script / concept / render | May not always have final video yet. Script → render state progression. |
+
+### 1.3 Generation Behavior
+
+- One prompt can generate **multiple content items**
+- Each output = a `content_item`
+- Respect existing generation pipeline already implemented
+- Do not re-architect generation unless required
+
+**Incomplete assets:**
+
+- Only allow incomplete assets into the system according to existing generation-step logic
+- Do not introduce new partial states beyond what already exists
+
+### 1.4 Editing Behavior
+
+- Users can edit all fields
+- Editing triggers regeneration/update
+- Treat edits as **live generation inputs**, not static edits
+
+### 1.5 Starred / Special Designation
+
+A persistent starred/drafted state:
+
+- `starred` = special designation (same conceptual class as "down arrow" bucket/store group)
+- Backend stores this explicitly (not frontend-only)
+- Future: may become a dedicated grouping/store
+
+### 1.6 Sessions
+
+- Sessions exist and generation happens within sessions
+- Feed shows content **across all sessions**
+- Do not scope feed to one session
 
 ---
 
@@ -28,57 +96,126 @@ A background worker that:
 1. Plans scripts (Gemini)
 2. Generates audio (ElevenLabs) and video (Veo) in parallel
 3. Composes the final video (FFmpeg)
-4. Uploads to Supabase Storage and updates the content queue
+4. Uploads to Supabase Storage and updates content items
 
 ---
 
-## 3. Supabase Schema
+## 3. Core Data Model
 
-**Project:** `rnqkjfrwkyupkyvygtpg` (3thanh's Org)
-**URL:** `https://rnqkjfrwkyupkyvygtpg.supabase.co`
+### 3.1 Hierarchy
 
-### Tables
+```
+business → session → content_item
+```
+
+### 3.2 Tables
 
 #### `businesses`
-Stores session/campaign context. Each "session" in the Creation Studio maps to a business row.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | auto-generated |
-| name | TEXT NOT NULL | Session/campaign name |
-| description | TEXT | Accumulated business context |
-| website_url | TEXT | Optional link |
+| name | TEXT NOT NULL | Business name |
 | created_at | TIMESTAMPTZ | auto |
 
-#### `content_queue`
-The main content items. Every card in the swipe feed is a row here.
+#### `sessions`
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | auto-generated |
-| business_id | UUID FK → businesses | Which session created this |
-| content_type | ENUM | `video_script`, `linkedin_post`, `support_reply` |
-| title | TEXT NOT NULL | Card title |
-| description | TEXT | Brief description |
-| script | TEXT | Full script with visual + VO directions |
+| business_id | UUID FK → businesses | Which business this session belongs to |
+| name | TEXT NOT NULL | Session/campaign name |
+| created_at | TIMESTAMPTZ | auto |
+
+#### `content_items` (core object)
+
+The primary content table. Every card in the feed is a row here.
+
+**Identity:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | auto-generated |
+| business_id | UUID FK → businesses | Which business owns this |
+| session_id | UUID FK → sessions | Which session created this |
+
+**Classification (critical for future views):**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| content_type | ENUM | `support`, `social`, `video` |
+| channel | TEXT | `intercom`, `linkedin`, `tiktok`, etc. |
+| review_mode | TEXT | `support`, `social`, `video` — drives future review UI |
+| source_type | TEXT | `screenshot`, `url`, `upload`, `generated`, etc. |
+
+**Content payload:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| title | TEXT | Card title |
+| body_text | TEXT | Body copy / post text |
+| script | TEXT | Full script with visual + VO directions (video type) |
+| image_url | TEXT | Primary image / screenshot URL |
 | video_url | TEXT | Public URL in Supabase Storage |
 | thumbnail_url | TEXT | Optional thumbnail |
-| status | ENUM | `pending`, `approved`, `rejected`, `needs_variant`, `needs_ideas` |
-| feedback | TEXT | User's notes when rejecting/requesting changes |
-| variant_of | UUID FK → content_queue | Links to the original card this is a variant of |
-| parent_id | UUID FK → content_queue | Links to the card that spawned this brainstorm |
+
+**Source / provenance:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| source_ref | TEXT | Reference identifier (URL, file path, etc.) |
+| source_bundle | JSONB | Full source context (screenshots, URLs, metadata) |
+| prompt_input_summary | TEXT | Human-readable summary of what prompted this |
+
+**Review state:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| review_status | ENUM | `pending`, `approved`, `rejected`, `needs_edit` |
+| review_note | TEXT | Reviewer's notes/feedback |
+| reviewed_by | TEXT | Who reviewed |
+| reviewed_at | TIMESTAMPTZ | When reviewed |
+
+**Special state:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| starred | BOOLEAN | Starred/special designation — persisted in backend |
+| down_arrow_designation | TEXT | Optional separate designation bucket |
+
+**Generation state:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| generation_job_id | UUID FK → generation_jobs | Link to the generation job |
+| generation_status | TEXT | Current generation step |
+| model_name | TEXT | Which model was used |
+| prompt_template_id | UUID FK → prompt_templates | Which template was used |
+
+**Lineage:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| parent_id | UUID FK → content_items | Links to the card that spawned this brainstorm |
+| variant_of | UUID FK → content_items | Links to the original card this is a variant of |
+
+**Timestamps:**
+
+| Column | Type | Notes |
+|--------|------|-------|
 | metadata | JSONB | Extensible metadata |
 | created_at | TIMESTAMPTZ | auto |
 | updated_at | TIMESTAMPTZ | auto, trigger-updated |
 
 #### `generation_jobs`
+
 Tracks the pipeline's work queue.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | auto-generated |
-| content_queue_id | UUID FK → content_queue | The card this job will populate |
-| source_card_id | UUID FK → content_queue | Original card (for variants/brainstorms) |
+| content_item_id | UUID FK → content_items | The item this job will populate |
+| source_card_id | UUID FK → content_items | Original card (for variants/brainstorms) |
 | job_type | TEXT | `initial`, `variant`, `brainstorm` |
 | prompt | TEXT NOT NULL | The user prompt / generation instructions |
 | status | TEXT | `queued`, `processing`, `completed`, `failed` |
@@ -87,6 +224,7 @@ Tracks the pipeline's work queue.
 | completed_at | TIMESTAMPTZ | When job finished |
 
 #### `prompt_templates`
+
 Editable prompt templates (overrides defaults in `src/templates/`).
 
 | Column | Type | Notes |
@@ -98,173 +236,109 @@ Editable prompt templates (overrides defaults in `src/templates/`).
 | is_default | BOOLEAN | Whether this is the default for its type |
 | created_at | TIMESTAMPTZ | auto |
 
-### Storage
-- **Bucket:** `content-videos` (public)
-- Generated videos stored at: `generated/{job_id}.mp4`
-- User uploads stored at: `uploads/{timestamp}-{filename}`
+### 3.3 Optional but Recommended
 
-### Realtime
-- `content_queue` — subscribed for INSERT + UPDATE + DELETE events via `subscribeToFeedChanges()`. Tracks old status on updates so the UI knows when a card transitions to/from pending.
-- `generation_jobs` — subscribed for UPDATE events via `subscribeToJobUpdates(jobId)` for progress tracking (queued → processing → completed/failed)
+#### `review_events`
 
----
+For auditability and future undo:
 
-## 4. Swipe Feed — Interaction Spec
-
-**This section is the handoff for the UI agent (Loveable or otherwise).**
-
-### Keyboard Map
-
-Labels are dynamic per persona. Read `feed.swipeLabels` for current action names, colors, and `requiresFeedback` flags. Default (Content Creator persona):
-
-| Key | Action | Status Written to DB | Opens Feedback? |
-|-----|--------|---------------------|-----------------|
-| → Right | Approve (persona label: `swipeLabels.right.action`) | `approved` | No |
-| ← Left | Reject (persona label: `swipeLabels.left.action`) | `rejected` + feedback | Yes |
-| ↑ Up | Request variant (persona label: `swipeLabels.up.action`) | `needs_variant` + feedback | Yes |
-| ↓ Down | More ideas (persona label: `swipeLabels.down.action`) | `needs_ideas` + feedback | Yes |
-| Any letter/number | Start typing notes | Opens feedback drawer | Yes |
-| Space | Play/pause video | N/A | No |
-
-Each persona defines different labels (e.g., Support Agent: right = "Send Reply", up = "Escalate"). The `requiresFeedback` flag on each label tells the UI whether to open the feedback drawer for that direction.
-
-### Card Lifecycle
-
-```
-pending → approved (→ done, saved for export)
-pending → rejected (feedback saved, card archived)
-pending → needs_variant → feedback loop creates new card → pending (new variant appears)
-pending → needs_ideas → feedback loop creates new card → pending (new idea appears)
-```
-
-### Data Access for the UI
-
-The UI should use the `FeedManager` class from `src/lib/feed-manager.ts` — it wraps all Supabase logic, handles prefetching, undo, realtime, and persona filtering.
-
-**Recommended approach (FeedManager):**
-```typescript
-import { FeedManager } from './lib/feed-manager.js';
-
-const feed = new FeedManager({
-  persona: 'content-creator',  // or 'support-agent', 'social-manager', 'all'
-  businessId: sessionId,       // optional: scope to a campaign
-});
-
-await feed.start();            // loads initial cards + sets up realtime
-
-const card = feed.currentCard();     // what to render
-const labels = feed.swipeLabels;     // { right: { action: "Approve", color: "#22c55e", ... }, ... }
-
-await feed.swipeRight();             // approve + auto-advance
-await feed.swipeLeft('too long');    // reject with feedback
-await feed.undo();                   // restore last card
-
-await feed.switchPersona('support-agent'); // switch focus, queue reloads
-
-feed.on((event) => {
-  if (event.type === 'queue_empty') showEmptyState(feed.persona.emptyStateMessage);
-  if (event.type === 'persona_switched') animateTransition(event.from, event.to);
-});
-
-const stats = feed.stop();           // end session, get stats
-```
-
-**Direct API approach (for custom UI logic):**
-
-All functions are in `src/lib/content-api.ts`. The UI never needs to call Supabase directly.
-
-```typescript
-import { fetchFeed, approveCard, subscribeToFeedChanges } from './lib/content-api.js';
-
-const page = await fetchFeed({ businessId, contentType: 'video_script', limit: 10 });
-const card = await approveCard(cardId);  // returns updated card
-const unsub = subscribeToFeedChanges((event) => { ... });
-```
-
-See Section 8 for the full API reference.
-
-### Visual Spec (Feed View)
-
-- Full-screen dark theme (black bg)
-- One card centered at a time, max 480x720px
-- Card has: video player (autoplay, loop, muted), gradient overlay, title, description, script preview, content type badge, session tag
-- Spring animations on swipe (300ms)
-- Action bar at bottom: 4 buttons (←↑↓→) with color-coded hover states
-- Feedback drawer slides up from bottom on reject/variant/ideas
-- Empty state: inbox icon + "No content to review" + "Create your first video" button
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | auto-generated |
+| content_item_id | UUID FK → content_items | Which item was reviewed |
+| action | TEXT | `approve`, `reject`, `star`, `edit`, etc. |
+| note | TEXT | Optional note from reviewer |
+| actor_id | TEXT | Who performed the action |
+| created_at | TIMESTAMPTZ | auto |
 
 ---
 
-## 5. Creation Studio — Interaction Spec
+## 4. Feed Contract
 
-**This section is the handoff for the UI agent building the creation interface.**
+Backend must return enough data for frontend to:
 
-### Session Model
+- Render mixed feed
+- Distinguish content types
+- Render different card styles (screenshot-first for support, text-first for social, video player for video)
+- Support editing + regeneration
+- Support starred state
 
-Each "session" = a creative campaign. Maps to a `businesses` row in Supabase.
+Backend should **NOT**:
 
-- Sessions listed in a left sidebar (collapsible)
-- Each session has a name, colored tag, and accumulated context
-- "+ New Session" button at top of sidebar
-
-### Chat Interface
-
-- ChatGPT-style conversation thread
-- User can: type text, upload images/videos, paste URLs
-- System responds with confirmations and status updates
-- Uploads appear as chips/thumbnails above the input (removable)
-- Input area: multi-line text + attach button (images, videos, URLs) + send button
-
-### First-Time Flow
-
-1. "What's this campaign about?" → quick-start category cards
-2. "Tell me about your business" → text input or URL paste
-3. Context stored in `businesses` table
-
-### Generation Trigger
-
-When the user describes a video concept and hits send:
-1. UI creates a `content_queue` row with `status: 'pending'` and a placeholder title
-2. UI creates a `generation_jobs` row with `job_type: 'initial'` and the user's prompt
-3. The background worker (Workstream B) picks up the job and processes it
-4. UI shows progress by polling `generation_jobs.status`
-5. When complete, the card appears in the feed via realtime
-
-### Supabase Queries for Creation Studio
-
-**Create a session:**
-```sql
-INSERT INTO businesses (name, description, website_url)
-VALUES ($name, $description, $url)
-RETURNING *
-```
-
-**List sessions:**
-```sql
-SELECT * FROM businesses ORDER BY created_at DESC
-```
-
-**Trigger generation:**
-```typescript
-import { triggerGeneration, subscribeToJobUpdates } from './lib/content-api.js';
-
-const { card, jobId } = await triggerGeneration({
-  businessId: sessionId,
-  prompt: userMessage,
-  contentType: 'video_script',
-});
-
-// Track progress
-const unsub = subscribeToJobUpdates(jobId, (job) => {
-  // job.status: 'queued' → 'processing' → 'completed' | 'failed'
-  updateProgressUI(job.status);
-  if (job.status === 'completed' || job.status === 'failed') unsub();
-});
-```
+- Hardcode UI assumptions
+- Assume one layout for all cards
 
 ---
 
-## 6. Generation Pipeline — Technical Spec
+## 5. Setup / Generation Contract
+
+The "content generation tab" drives what appears in feed.
+
+### Inputs
+
+| Input | Description |
+|-------|-------------|
+| prompt / brief | User's generation instructions |
+| uploaded assets | Images, videos, documents |
+| screenshots | Support context screenshots |
+| URLs | Reference URLs |
+| references | Additional context |
+| personas | Config only (does not drive routing in v1) |
+| style/brand context | If provided |
+
+### Output
+
+- Multiple `content_items` per request
+- Each item retains source provenance
+
+---
+
+## 6. Source-Aware System
+
+Each content item retains:
+- **What** it was based on
+- **Where** it came from
+- **What type** of source it used
+
+Stored via:
+
+| Field | Purpose |
+|-------|---------|
+| `source_type` | Category: `screenshot`, `url`, `upload`, `generated` |
+| `source_ref` | Specific reference (URL, file path, etc.) |
+| `source_bundle` | Full JSON context (multiple screenshots, URLs, metadata) |
+
+Critical for: support screenshot review, social reference-based generation, future explainability.
+
+---
+
+## 7. Channel / Destination Context
+
+Even in v1, backend supports:
+
+- `channel` field on every content item
+- Ability to differentiate: `intercom`, `linkedin`, `tiktok`, etc.
+- Frontend will use this to approximate native UI later
+
+---
+
+## 8. Variants / Iteration
+
+When content is regenerated or iterated:
+- New `content_item` should be created OR existing one updated (depending on current system)
+
+If creating new:
+
+| Field | Purpose |
+|-------|---------|
+| `parent_id` | Links to the card that spawned this |
+| `variant_of` | Links to the original card this is a variant of |
+
+Even if unused in UI now, store this for future lineage.
+
+---
+
+## 9. Generation Pipeline — Technical Spec
 
 ### Pipeline Flow
 
@@ -290,7 +364,7 @@ User prompt
              │
              ▼
 [Phase 4: Upload]
-  → Supabase Storage → content_queue.video_url
+  → Supabase Storage → content_items.video_url
 ```
 
 ### File Structure
@@ -328,14 +402,10 @@ src/
 ### Running the Worker
 
 ```bash
-# Start the video generation worker (processes queued jobs)
-npm run worker
-
-# Start the feedback loop (watches for variant/ideas requests)
-npm run feedback
-
-# Seed test data
-npm run seed
+npm run worker    # Start the video generation worker (processes queued jobs)
+npm run feedback  # Start the feedback loop (watches for variant/ideas requests)
+npm run seed      # Seed test data
+npm run typecheck # TypeScript check
 ```
 
 ### Environment Variables
@@ -351,162 +421,236 @@ ELEVENLABS_API_KEY=<elevenlabs api key>
 
 ```typescript
 interface VideoScript {
-  title: string;                    // Video title
-  totalDurationSeconds: number;     // 15-30s
+  title: string;
+  totalDurationSeconds: number;
   scenes: {
     index: number;
-    heading: string;                // e.g. "OPEN: Close-up of product"
-    visualDescription: string;      // Pure visual — sent to Veo
+    heading: string;
+    visualDescription: string;
     durationSeconds: number;
   }[];
   voiceover: {
     sceneIndex: number;
     lineIndex: number;
-    speaker: string;                // "narrator" or character name
-    text: string;                   // Words to speak
-    emotion: string;                // e.g. "warm excitement"
-    stability: number;              // 0-1, controls ElevenLabs voice stability
-    style: number;                  // 0-1, controls ElevenLabs expressiveness
+    speaker: string;
+    text: string;
+    emotion: string;
+    stability: number;
+    style: number;
   }[];
   sfx: {
     sceneIndex: number;
-    prompt: string;                 // Acoustic description for ElevenLabs SFX
+    prompt: string;
     durationSeconds: number;
   }[];
-  videoPrompt: string;              // Full visual prompt for Veo — no audio refs
+  videoPrompt: string;
 }
 ```
 
 ---
 
-## 7. Feedback Loop
+## 10. Feedback Loop
 
 When the user swipes up (variant) or down (more ideas) in the feed:
 
-1. `content_queue` row status changes to `needs_variant` or `needs_ideas`
+1. `content_items` row `review_status` changes to `needs_edit`
 2. `feedback-loop.ts` picks up the row
-3. It creates a new `content_queue` row (linked via `variant_of` or `parent_id`)
+3. It creates a new `content_items` row (linked via `variant_of` or `parent_id`)
 4. It creates a new `generation_jobs` row with the user's feedback baked into the prompt
 5. `video-worker.ts` picks up the new job and runs the full pipeline
-6. New card appears in the feed via Supabase Realtime — no refresh needed
+6. New card appears in the feed via Supabase Realtime
 
 ---
 
-## 8. Content API Reference (for UI integration)
+## 11. Supabase Infrastructure
 
-Import from `src/lib/content-api.ts`:
+**Project:** `rnqkjfrwkyupkyvygtpg` (3thanh's Org)
+**URL:** `https://rnqkjfrwkyupkyvygtpg.supabase.co`
 
-### Feed fetching
+### Storage
+- **Bucket:** `content-videos` (public)
+- Generated videos stored at: `generated/{job_id}.mp4`
+- User uploads stored at: `uploads/{timestamp}-{filename}`
 
-| Function | Args | Returns | Description |
-|----------|------|---------|-------------|
-| `fetchFeed(options?)` | `FeedOptions` (businessId, contentType, limit, cursor, excludeIds) | `FeedPage` | Paginated cursor-based feed of pending cards |
-| `fetchPendingCards(businessId?)` | optional business ID | `ContentItem[]` | Simple fetch of all pending cards (no pagination) |
-| `fetchCardById(id)` | card ID | `CardWithRelations` | Single card with variants, parent, variantOf, generationJob |
-| `fetchCardVariants(id)` | card ID | `ContentItem[]` | All variants of a card |
-| `fetchCardAncestors(id, maxDepth?)` | card ID, optional depth limit | `ContentItem[]` | Walk parent chain (brainstorm lineage) |
+### Realtime
+- `content_items` — subscribed for INSERT + UPDATE + DELETE events
+- `generation_jobs` — subscribed for UPDATE events for progress tracking
 
-### Swipe actions (all return the updated card)
+---
 
-| Function | Args | Returns | Description |
-|----------|------|---------|-------------|
-| `approveCard(id)` | card ID | `ContentItem` | Mark approved |
-| `rejectCard(id, feedback?)` | card ID, optional notes | `ContentItem` | Mark rejected |
-| `requestVariant(id, feedback)` | card ID, feedback text | `ContentItem` | Request variant |
-| `requestMoreIdeas(id, feedback)` | card ID, feedback text | `ContentItem` | Request new ideas |
-| `undoAction(id)` | card ID | `ContentItem` | Revert any actioned card back to pending |
+## 12. Swipe Feed — Interaction Spec
 
-### Batch operations
+**This section is the handoff for the UI agent (Loveable or otherwise).**
 
-| Function | Args | Returns | Description |
-|----------|------|---------|-------------|
-| `batchApprove(ids)` | card ID array | `number` | Approve multiple pending cards, returns count |
-| `batchReject(ids, feedback?)` | card ID array, optional feedback | `number` | Reject multiple pending cards, returns count |
+### Keyboard Map
 
-### Content generation
+Labels are dynamic per persona. Default (Content Creator persona):
 
-| Function | Args | Returns | Description |
-|----------|------|---------|-------------|
-| `triggerGeneration({businessId?, prompt, contentType?, title?})` | generation params | `{ card, jobId }` | Create card + job; worker picks it up |
-| `triggerBulkGeneration({businessId?, prompts, contentType?})` | bulk params | `{ card, jobId }[]` | Fire off multiple prompts at once |
-| `uploadContent({title, description?, script?, businessId?, contentType?, videoFile?})` | content params | `ContentItem` | Manual upload with optional video file |
+| Key | Action | Status Written to DB | Opens Feedback? |
+|-----|--------|---------------------|-----------------|
+| → Right | Approve | `approved` | No |
+| ← Left | Reject | `rejected` + review_note | Yes |
+| ↑ Up | Request variant | triggers new generation | Yes |
+| ↓ Down | Star / special designation | `starred = true` | No |
+| Any letter/number | Start typing notes | Opens feedback drawer | Yes |
+| Space | Play/pause video | N/A | No |
 
-### History, search & analytics
+### Card Lifecycle
 
-| Function | Args | Returns | Description |
-|----------|------|---------|-------------|
-| `fetchSwipeHistory({businessId?, status?, limit?, offset?})` | filter options | `{ cards, total }` | Past decisions, offset-paginated |
-| `searchCards(query, {businessId?, limit?})` | search text, options | `ContentItem[]` | Search cards by title/description |
-| `fetchFeedStats(businessId?)` | optional business ID | `FeedStats` | Aggregate counts, approval rate, avg cards/day |
-| `fetchJobStatus(jobId)` | job ID | `GenerationJob \| null` | Check a generation job's current status |
-| `fetchActiveJobs(businessId?)` | optional business ID | `GenerationJob[]` | All queued/processing jobs |
-
-### Realtime subscriptions (all return an unsubscribe function)
-
-| Function | Args | Returns | Description |
-|----------|------|---------|-------------|
-| `subscribeToFeedChanges(callback, businessId?)` | handler fn, optional business filter | `() => void` | All card changes (INSERT+UPDATE+DELETE) with old status |
-| `subscribeToNewCards(callback)` | handler fn | `() => void` | Only new pending cards (lightweight) |
-| `subscribeToJobUpdates(jobId, callback)` | job ID, handler fn | `() => void` | Watch a specific job's progress |
-
-### FeedManager (stateful orchestrator)
-
-Import from `src/lib/feed-manager.ts`:
-
-```typescript
-const feed = new FeedManager({ persona: "content-creator", businessId: "..." });
-await feed.start();
-
-feed.currentCard();       // Current card to display
-feed.peekCards(3);        // Next 3 cards (for stack preview)
-feed.swipeLabels;         // { right: { action: "Approve", ... }, left: { action: "Reject", ... }, ... }
-feed.persona;             // Current active persona object
-feed.availablePersonas;   // All registered personas
-
-await feed.swipeRight();              // Approve + advance
-await feed.swipeLeft("too long");     // Reject with feedback + advance
-await feed.swipeUp("make it shorter");// Request variant + advance
-await feed.swipeDown("more casual");  // More ideas + advance
-await feed.undo();                    // Restore last swiped card
-
-await feed.switchPersona("support-agent"); // Flush queue, reload with new content types
-
-feed.on((event) => { ... });          // Listen for swiped, undo, queue_empty, persona_switched, etc.
-const stats = feed.stop();            // End session, get stats
+```
+pending → approved (saved for export)
+pending → rejected (review_note saved, card archived)
+pending → needs_edit → feedback loop creates new card → pending (new variant appears)
+pending → starred (special designation, remains reviewable)
 ```
 
-### Personas
+### Visual Spec (Feed View)
 
-Import from `src/lib/personas.ts`:
-
-| Persona ID | Name | Content Types | Right | Left | Up | Down |
-|------------|------|--------------|-------|------|-----|------|
-| `content-creator` | Content Creator | `video_script`, `linkedin_post` | Approve | Reject | Request Variant | More Ideas |
-| `support-agent` | Support Agent | `support_reply` | Send Reply | Discard | Escalate | Use Template |
-| `social-manager` | Social Manager | `linkedin_post` | Schedule | Skip | Edit & Rewrite | Generate Alternatives |
-| `all` | Everything | all types | Approve | Reject | Request Variant | More Ideas |
-
-Custom personas can be registered at runtime via `registerPersona()` or `createPersona()`.
+- Full-screen dark theme (black bg)
+- One card centered at a time
+- Card renders differently per content_type:
+  - **Support**: screenshot-first, response draft below
+  - **Social**: text-first, channel badge
+  - **Video**: video player (autoplay, loop, muted), script preview
+- Spring animations on swipe (300ms)
+- Action bar at bottom with color-coded actions
+- Feedback drawer slides up from bottom on reject/variant
+- Star toggle visible on all cards
+- Empty state: inbox icon + "No content to review"
 
 ---
 
-## 9. Deployment
+## 13. Creation Studio — Interaction Spec
+
+### Session Model
+
+Each "session" = a creative campaign. Maps to a `sessions` row in Supabase (linked to a business).
+
+- Sessions listed in a left sidebar (collapsible)
+- Each session has a name and accumulated context
+- "+ New Session" button at top of sidebar
+
+### Chat Interface
+
+- ChatGPT-style conversation thread
+- User can: type text, upload images/videos, paste URLs, upload screenshots
+- System responds with confirmations and status updates
+- Uploads appear as chips/thumbnails above the input (removable)
+
+### Generation Trigger
+
+When the user describes content and hits send:
+1. UI creates one or more `content_items` rows
+2. UI creates `generation_jobs` rows
+3. Worker picks up jobs and processes them
+4. UI shows progress by polling `generation_jobs.status`
+5. When complete, cards appear in the feed via realtime
+
+---
+
+## 14. What Is Explicitly Out of Scope (V2)
+
+These should NOT be built now, but system should remain compatible.
+
+### 14.1 Multi-View Feed
+
+Future model:
+- Center = all content
+- Left/right = filtered views (support, social, etc.)
+- Horizontal swipe between views
+
+**Out of scope:** view switching, lane navigation, mutually exclusive card routing.
+
+### 14.2 View System
+
+Future: views defined by filters, possibly user-configurable, possibly stored in backend.
+
+**Out of scope:** views table, view definitions, view routing logic.
+
+### 14.3 Persona-Driven Routing
+
+Future: personas define generation behavior, view grouping, review modes.
+
+**Out of scope:** using personas to filter feed, persona-based queues.
+
+### 14.4 Advanced Review Modes
+
+Future:
+- Support QA mode (conversation + draft response)
+- Social review mode (hook, CTA, formatting)
+- Video staged review (script → render)
+
+**Out of scope:** specialized review UI logic in backend.
+
+### 14.5 Batch Actions
+
+Future: approve multiple, filter + bulk review.
+
+**Out of scope now.**
+
+### 14.6 Undo System
+
+Future: undo toast or stack.
+
+**Out of scope:** full undo system (but `review_events` helps later).
+
+### 14.7 Advanced Generation Controls
+
+Future: strict vs creative, prompt adherence, seed consistency, variant controls.
+
+**Out of scope** in backend unless already partially implemented.
+
+### 14.8 Brand / Style Kit System
+
+Future: reusable brand context, tone rules, banned phrases.
+
+**Out of scope now** (but leave room in metadata).
+
+### 14.9 Configurable Views / Tabs in UI
+
+Future: tabs created in setup page, each tab = view, mutually exclusive card assignment.
+
+**Out of scope now.**
+
+---
+
+## 15. Important Guardrails
+
+1. **Metadata is clean and structured** — Do not rely on string parsing or implicit assumptions.
+2. **Content items are flexible** — Not all items are text-first. Support items are screenshot-first. Video items may lack a final render.
+3. **No hardcoded view assumptions** — Do not assume one type per feed or all items belong everywhere.
+4. **Future compatibility without overbuilding** — Only prepare for filtering, classification, and routing. Do NOT build those systems now.
+
+---
+
+## 16. Expected Outcome (V1)
+
+After this update, backend should support:
+
+- [x] Creating sessions
+- [ ] Generating multiple content items per prompt
+- [ ] Storing support/social/video content
+- [ ] Storing screenshot-first items (image_url, source_bundle)
+- [ ] Editing + regenerating content
+- [ ] Mixed feed across all sessions
+- [ ] Starred/special designation state
+- [ ] Clean metadata for future views (content_type, channel, review_mode, source_type)
+- [ ] Optional event tracking (review_events)
+- [ ] Source provenance (source_ref, source_bundle, prompt_input_summary)
+- [ ] Channel context (intercom, linkedin, tiktok)
+- [ ] Variant lineage (parent_id, variant_of)
+
+**Without:**
+
+- Building view system
+- Building routing system
+- Building multi-lane feed
+
+---
+
+## 17. Deployment
 
 - **Supabase:** Already provisioned (`rnqkjfrwkyupkyvygtpg`)
 - **Vercel:** Will deploy when ready (git-only for now)
 - **Worker:** Runs locally via `npm run worker` during dev; later deploy to any Node host
 - **Feedback loop:** Runs locally via `npm run feedback`; later could be a Supabase Edge Function
-
----
-
-## 10. Open Items
-
-- [ ] Connect Loveable UI to Supabase (env vars)
-- [x] Wire Creation Studio → generation_jobs INSERT — done via `triggerGeneration()`
-- [x] Add session filtering to the feed (filter by business_id) — done via `fetchFeed({ businessId })`
-- [ ] Handle video upload in Creation Studio — `uploadContent()` is ready, UI needs to call it
-- [x] Add progress indicator in UI — `subscribeToJobUpdates()` and `fetchJobStatus()` are ready
-- [ ] Production deployment strategy for the worker process
-- [ ] Build persona switcher UI (read `feed.availablePersonas`, call `feed.switchPersona()`)
-- [ ] Build analytics dashboard using `feed-analytics.ts` functions
-- [ ] Paste `GEMINI_API_KEY` into `.env.local` to enable generation pipeline

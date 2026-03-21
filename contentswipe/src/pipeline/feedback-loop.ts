@@ -20,46 +20,54 @@ function fallbackBusiness(): Business {
   return {
     id: "fallback",
     name: "My Business",
-    description: "A business creating engaging short-form video content.",
+    description: "A business creating engaging short-form content.",
     website_url: null,
     created_at: null,
   };
 }
 
-async function handleVariantRequest(card: ContentItem): Promise<void> {
-  console.log(`  Processing variant request for card: ${card.title}`);
+async function handleVariantRequest(item: ContentItem): Promise<void> {
+  console.log(`  Processing variant request for item: ${item.title}`);
 
   const business =
-    (await getBusiness(card.business_id)) ?? fallbackBusiness();
+    (await getBusiness(item.business_id)) ?? fallbackBusiness();
 
   const prompt = [
-    `Create a VARIANT of this video for ${business.name}.`,
-    card.script ? `\nOriginal script:\n${card.script}` : "",
-    `\nUser feedback: ${card.feedback ?? "Make a different version"}`,
+    `Create a VARIANT of this content for ${business.name}.`,
+    item.script ? `\nOriginal script:\n${item.script}` : "",
+    item.body_text ? `\nOriginal text:\n${item.body_text}` : "",
+    `\nUser feedback: ${item.review_note ?? "Make a different version"}`,
     `\nBusiness context: ${business.description ?? ""}`,
+    `\nContent type: ${item.content_type}`,
+    item.channel ? `\nChannel: ${item.channel}` : "",
   ].join("");
 
-  const { data: newCard, error: insertErr } = await supabase
-    .from("content_queue")
+  const { data: newItem, error: insertErr } = await supabase
+    .from("content_items")
     .insert({
-      title: `${card.title} (variant)`,
-      description: card.description,
-      content_type: card.content_type,
-      variant_of: card.id,
-      business_id: card.business_id,
-      status: "pending",
+      title: `${item.title} (variant)`,
+      body_text: item.body_text,
+      content_type: item.content_type,
+      channel: item.channel,
+      review_mode: item.review_mode,
+      source_type: item.source_type,
+      variant_of: item.id,
+      business_id: item.business_id,
+      session_id: item.session_id,
+      review_status: "pending",
+      prompt_input_summary: item.review_note ?? "Variant request",
     })
     .select()
     .single();
 
-  if (insertErr || !newCard) {
-    console.error(`  Failed to create variant card: ${insertErr?.message}`);
+  if (insertErr || !newItem) {
+    console.error(`  Failed to create variant item: ${insertErr?.message}`);
     return;
   }
 
   const { error: jobErr } = await supabase.from("generation_jobs").insert({
-    content_queue_id: newCard.id,
-    source_card_id: card.id,
+    content_item_id: newItem.id,
+    source_card_id: item.id,
     job_type: "variant",
     prompt,
   });
@@ -69,43 +77,49 @@ async function handleVariantRequest(card: ContentItem): Promise<void> {
     return;
   }
 
-  console.log(`  Created variant card ${newCard.id} + generation job`);
+  console.log(`  Created variant item ${newItem.id} + generation job`);
 }
 
-async function handleBrainstormRequest(card: ContentItem): Promise<void> {
-  console.log(`  Processing brainstorm request for card: ${card.title}`);
+async function handleBrainstormRequest(item: ContentItem): Promise<void> {
+  console.log(`  Processing brainstorm request for item: ${item.title}`);
 
   const business =
-    (await getBusiness(card.business_id)) ?? fallbackBusiness();
+    (await getBusiness(item.business_id)) ?? fallbackBusiness();
 
   const prompt = [
-    `Generate a completely new short-form video concept for ${business.name}.`,
+    `Generate a completely new ${item.content_type} concept for ${business.name}.`,
     `\nBusiness description: ${business.description ?? ""}`,
     business.website_url ? `\nWebsite: ${business.website_url}` : "",
-    card.feedback ? `\nUser wants ideas in this direction: ${card.feedback}` : "",
+    item.review_note ? `\nUser wants ideas in this direction: ${item.review_note}` : "",
+    item.channel ? `\nTarget channel: ${item.channel}` : "",
   ].join("");
 
-  const { data: newCard, error: insertErr } = await supabase
-    .from("content_queue")
+  const { data: newItem, error: insertErr } = await supabase
+    .from("content_items")
     .insert({
-      title: `New idea (from: ${card.title})`,
-      description: card.feedback,
-      content_type: card.content_type,
-      parent_id: card.id,
-      business_id: card.business_id,
-      status: "pending",
+      title: `New idea (from: ${item.title})`,
+      body_text: item.review_note,
+      content_type: item.content_type,
+      channel: item.channel,
+      review_mode: item.review_mode,
+      source_type: "generated",
+      parent_id: item.id,
+      business_id: item.business_id,
+      session_id: item.session_id,
+      review_status: "pending",
+      prompt_input_summary: item.review_note ?? "Brainstorm request",
     })
     .select()
     .single();
 
-  if (insertErr || !newCard) {
-    console.error(`  Failed to create brainstorm card: ${insertErr?.message}`);
+  if (insertErr || !newItem) {
+    console.error(`  Failed to create brainstorm item: ${insertErr?.message}`);
     return;
   }
 
   const { error: jobErr } = await supabase.from("generation_jobs").insert({
-    content_queue_id: newCard.id,
-    source_card_id: card.id,
+    content_item_id: newItem.id,
+    source_card_id: item.id,
     job_type: "brainstorm",
     prompt,
   });
@@ -115,38 +129,37 @@ async function handleBrainstormRequest(card: ContentItem): Promise<void> {
     return;
   }
 
-  console.log(`  Created brainstorm card ${newCard.id} + generation job`);
+  console.log(`  Created brainstorm item ${newItem.id} + generation job`);
 }
 
-async function processActionableCards(): Promise<number> {
-  const { data: cards, error } = await supabase
-    .from("content_queue")
+async function processActionableItems(): Promise<number> {
+  const { data: items, error } = await supabase
+    .from("content_items")
     .select("*")
-    .in("status", ["needs_variant", "needs_ideas"])
+    .eq("review_status", "needs_edit")
     .order("updated_at", { ascending: true });
 
-  if (error || !cards?.length) return 0;
+  if (error || !items?.length) return 0;
 
   let processed = 0;
 
-  for (const card of cards) {
+  for (const item of items) {
     try {
-      if (card.status === "needs_variant") {
-        await handleVariantRequest(card);
-      } else if (card.status === "needs_ideas") {
-        await handleBrainstormRequest(card);
+      if (item.variant_of || item.review_note?.toLowerCase().includes("variant")) {
+        await handleVariantRequest(item);
+      } else {
+        await handleBrainstormRequest(item);
       }
 
-      // Mark original as processed so we don't loop on it
       await supabase
-        .from("content_queue")
-        .update({ status: "rejected" })
-        .eq("id", card.id);
+        .from("content_items")
+        .update({ review_status: "rejected" })
+        .eq("id", item.id);
 
       processed++;
     } catch (err) {
       console.error(
-        `  Error processing card ${card.id}:`,
+        `  Error processing item ${item.id}:`,
         err instanceof Error ? err.message : err
       );
     }
@@ -158,20 +171,20 @@ async function processActionableCards(): Promise<number> {
 async function runFeedbackLoop(): Promise<void> {
   console.log("ContentSwipe Feedback Loop started");
   console.log(
-    `Polling every ${POLL_INTERVAL_MS / 1000}s for needs_variant / needs_ideas cards...\n`
+    `Polling every ${POLL_INTERVAL_MS / 1000}s for needs_edit items...\n`
   );
 
   while (true) {
-    const count = await processActionableCards();
+    const count = await processActionableItems();
     if (count > 0) {
-      console.log(`  Processed ${count} card(s)\n`);
+      console.log(`  Processed ${count} item(s)\n`);
     }
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
 }
 
 export {
-  processActionableCards,
+  processActionableItems,
   handleVariantRequest,
   handleBrainstormRequest,
 };

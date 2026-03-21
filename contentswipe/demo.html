@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContentSwipe — Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--card:#18181b;--border:#27272a;
+  --text:#fafafa;--muted:#a1a1aa;--dim:#52525b;
+  --green:#22c55e;--red:#ef4444;--purple:#a855f7;--blue:#3b82f6;--amber:#f59e0b;
+  --radius:20px;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Outfit',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;
+  user-select:none;-webkit-user-select:none;
+}
+
+/* ─── Top bar ─── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;z-index:10;
+}
+.logo{
+  font-family:'Space Mono',monospace;font-weight:700;font-size:18px;
+  letter-spacing:-0.5px;
+}
+.logo span{color:var(--purple)}
+.stats-bar{display:flex;gap:16px;font-size:13px;color:var(--muted)}
+.stats-bar .num{color:var(--text);font-weight:600;margin-right:2px}
+
+/* ─── Persona picker ─── */
+.persona-strip{
+  display:flex;gap:8px;padding:0 24px 12px;overflow-x:auto;
+  scrollbar-width:none;
+}
+.persona-strip::-webkit-scrollbar{display:none}
+.persona-chip{
+  flex-shrink:0;padding:8px 16px;border-radius:100px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;font-family:inherit;
+  display:flex;align-items:center;gap:6px;
+}
+.persona-chip:hover{border-color:var(--dim);color:var(--text)}
+.persona-chip.active{
+  background:var(--purple);border-color:var(--purple);
+  color:#fff;font-weight:600;
+}
+.persona-chip .count{
+  background:rgba(255,255,255,.15);border-radius:100px;
+  padding:1px 7px;font-size:11px;
+}
+.persona-chip.active .count{background:rgba(255,255,255,.25)}
+
+/* ─── Card area ─── */
+.card-stage{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  position:relative;perspective:1200px;padding:0 24px;
+  overflow:hidden;
+}
+.card-stack{position:relative;width:400px;max-width:100%;aspect-ratio:9/14}
+
+.card{
+  position:absolute;inset:0;border-radius:var(--radius);
+  background:var(--card);border:1px solid var(--border);
+  overflow:hidden;display:flex;flex-direction:column;
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1),
+             opacity .3s ease;
+  will-change:transform;cursor:grab;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.5);
+}
+.card.behind-1{transform:scale(.95) translateY(12px);opacity:.6;z-index:1;pointer-events:none}
+.card.behind-2{transform:scale(.9) translateY(24px);opacity:.3;z-index:0;pointer-events:none}
+.card.active{z-index:5;opacity:1;transform:none}
+.card.swiping{transition:transform .4s cubic-bezier(.25,.8,.25,1),opacity .4s ease}
+.card.swipe-right{transform:translateX(150%) rotate(20deg);opacity:0}
+.card.swipe-left{transform:translateX(-150%) rotate(-20deg);opacity:0}
+.card.swipe-up{transform:translateY(-150%) scale(.8);opacity:0}
+.card.swipe-down{transform:translateY(150%) scale(.8);opacity:0}
+
+.card-visual{
+  height:45%;background:linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95);
+  position:relative;overflow:hidden;
+}
+.card-visual::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to bottom,transparent 50%,var(--card));
+}
+.card-visual .type-badge{
+  position:absolute;top:12px;left:12px;z-index:2;
+  padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.5px;
+  backdrop-filter:blur(8px);
+}
+.card-visual .type-badge.video_script{background:rgba(168,85,247,.4);color:#e9d5ff}
+.card-visual .type-badge.linkedin_post{background:rgba(59,130,246,.4);color:#bfdbfe}
+.card-visual .type-badge.support_reply{background:rgba(245,158,11,.4);color:#fef3c7}
+
+.card-visual .wave{
+  position:absolute;bottom:-2px;left:0;right:0;height:60px;z-index:1;
+}
+
+.card-body{flex:1;padding:20px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.card-body h2{font-size:20px;font-weight:700;line-height:1.2}
+.card-body .desc{font-size:14px;color:var(--muted);line-height:1.5}
+.card-body .script-preview{
+  font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);
+  background:rgba(255,255,255,.03);border-radius:8px;padding:10px;
+  line-height:1.6;flex:1;overflow:auto;white-space:pre-wrap;
+  border:1px solid rgba(255,255,255,.04);
+}
+.card-body .campaign-tag{
+  font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;
+  margin-top:auto;padding-top:8px;
+}
+.card-body .campaign-tag span{
+  width:8px;height:8px;border-radius:50%;display:inline-block;
+}
+
+/* ─── Action bar ─── */
+.action-bar{
+  display:flex;justify-content:center;gap:12px;
+  padding:16px 24px 28px;z-index:10;
+}
+.action-btn{
+  width:56px;height:56px;border-radius:50%;border:2px solid;
+  background:transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:22px;position:relative;
+}
+.action-btn:hover{transform:scale(1.15)}
+.action-btn:active{transform:scale(.95)}
+.action-btn .label{
+  position:absolute;bottom:-20px;font-size:10px;font-weight:600;
+  white-space:nowrap;font-family:'Outfit',sans-serif;
+  letter-spacing:.3px;text-transform:uppercase;
+}
+.action-btn.reject{border-color:var(--red);color:var(--red)}
+.action-btn.reject:hover{background:var(--red);color:#fff}
+.action-btn.variant{border-color:var(--purple);color:var(--purple)}
+.action-btn.variant:hover{background:var(--purple);color:#fff}
+.action-btn.ideas{border-color:var(--blue);color:var(--blue)}
+.action-btn.ideas:hover{background:var(--blue);color:#fff}
+.action-btn.approve{border-color:var(--green);color:var(--green)}
+.action-btn.approve:hover{background:var(--green);color:#fff}
+.action-btn.undo-btn{
+  border-color:var(--dim);color:var(--dim);
+  width:40px;height:40px;font-size:16px;
+  align-self:center;
+}
+.action-btn.undo-btn:hover{border-color:var(--muted);color:var(--muted)}
+.action-btn.undo-btn.disabled{opacity:.2;pointer-events:none}
+
+/* ─── Feedback drawer ─── */
+.feedback-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:100;opacity:0;pointer-events:none;
+  transition:opacity .25s;
+}
+.feedback-overlay.open{opacity:1;pointer-events:all}
+.feedback-drawer{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);border-top:1px solid var(--border);
+  border-radius:var(--radius) var(--radius) 0 0;
+  padding:24px;z-index:101;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.feedback-overlay.open+.feedback-drawer,
+.feedback-drawer.open{transform:translateY(0)}
+.feedback-drawer h3{font-size:16px;font-weight:600;margin-bottom:12px}
+.feedback-drawer textarea{
+  width:100%;height:80px;background:var(--bg);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);padding:12px;font-family:inherit;
+  font-size:14px;resize:none;outline:none;
+}
+.feedback-drawer textarea:focus{border-color:var(--purple)}
+.feedback-drawer .drawer-actions{
+  display:flex;gap:8px;justify-content:flex-end;margin-top:12px;
+}
+.feedback-drawer button{
+  padding:8px 20px;border-radius:8px;border:none;
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+}
+.feedback-drawer .cancel-btn{background:var(--border);color:var(--text)}
+.feedback-drawer .send-btn{background:var(--purple);color:#fff}
+
+/* ─── Empty state ─── */
+.empty-state{
+  display:none;flex-direction:column;align-items:center;gap:16px;
+  color:var(--muted);text-align:center;
+}
+.empty-state.visible{display:flex}
+.empty-state .icon{font-size:48px;opacity:.5}
+.empty-state h3{font-size:18px;color:var(--text);font-weight:600}
+.empty-state p{font-size:14px;max-width:280px}
+
+/* ─── Toast ─── */
+.toast{
+  position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:10px 20px;font-size:13px;font-weight:500;
+  z-index:200;transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+  display:flex;align-items:center;gap:8px;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .dot{width:8px;height:8px;border-radius:50%}
+
+/* ─── Keyboard hints ─── */
+.kbd-hints{
+  position:fixed;bottom:100px;right:24px;
+  display:flex;flex-direction:column;gap:4px;
+  font-size:11px;color:var(--dim);z-index:10;
+}
+.kbd-hints kbd{
+  display:inline-block;background:var(--card);border:1px solid var(--border);
+  border-radius:4px;padding:1px 5px;font-family:'Space Mono',monospace;
+  font-size:10px;margin-right:4px;
+}
+
+/* ─── Swipe indicator ─── */
+.swipe-indicator{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:48px;font-weight:800;z-index:20;
+  opacity:0;transition:opacity .15s;pointer-events:none;
+  text-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Content<span>Swipe</span></div>
+  <div class="stats-bar">
+    <span><span class="num" id="stat-approved">0</span>approved</span>
+    <span><span class="num" id="stat-rejected">0</span>rejected</span>
+    <span><span class="num" id="stat-queue">0</span>in queue</span>
+  </div>
+</div>
+
+<div class="persona-strip" id="persona-strip"></div>
+
+<div class="card-stage">
+  <div class="card-stack" id="card-stack"></div>
+  <div class="empty-state" id="empty-state">
+    <div class="icon">📭</div>
+    <h3 id="empty-title">No content to review</h3>
+    <p id="empty-desc">Switch personas or create new content to get started.</p>
+  </div>
+  <div class="swipe-indicator" id="swipe-indicator"></div>
+</div>
+
+<div class="action-bar" id="action-bar"></div>
+
+<div class="feedback-overlay" id="feedback-overlay"></div>
+<div class="feedback-drawer" id="feedback-drawer">
+  <h3 id="drawer-title">Add feedback</h3>
+  <textarea id="feedback-input" placeholder="What should change?"></textarea>
+  <div class="drawer-actions">
+    <button class="cancel-btn" onclick="closeFeedback()">Cancel</button>
+    <button class="send-btn" onclick="submitFeedback()">Send</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="dot"></div><span></span></div>
+
+<div class="kbd-hints">
+  <div><kbd>→</kbd> <span id="hint-right">Approve</span></div>
+  <div><kbd>←</kbd> <span id="hint-left">Reject</span></div>
+  <div><kbd>↑</kbd> <span id="hint-up">Variant</span></div>
+  <div><kbd>↓</kbd> <span id="hint-down">Ideas</span></div>
+  <div><kbd>Z</kbd> Undo</div>
+</div>
+
+<script>
+// ── Demo data cache ────────────────────────────────────────────
+
+const BUSINESSES = [
+  { id: "b1", name: "Acme Coffee Co", color: "#a855f7" },
+  { id: "b2", name: "Driftwood SaaS", color: "#3b82f6" },
+  { id: "b3", name: "Maison Noir", color: "#f59e0b" },
+];
+
+const DEMO_CARDS = [
+  // ── Video Scripts ──
+  {
+    id: "v1", title: "Morning Ritual", content_type: "video_script",
+    business_id: "b1", status: "pending",
+    description: "Show the journey from bean to cup — a 15-second visual of beans being roasted, ground, and brewed into a perfect pour-over.",
+    script: "[OPEN: Close-up of raw green beans]\nVO: \"Every morning starts with a single bean.\"\n\n[CUT: Beans tumbling in roaster, golden smoke]\nSFX: gentle crackling, warm hum\n\n[CUT: Hand grinding fresh beans]\nVO: \"Ground fresh. Brewed slow.\"\n\n[CUT: Hot water spiraling over grounds]\nSFX: water pouring, ceramic resonance\n\n[CLOSE: Steam rising, sunrise background]\nVO: \"From farm to your morning. Acme Coffee Co.\"",
+    gradient: "linear-gradient(135deg,#4c1d95,#7c3aed,#a855f7)"
+  },
+  {
+    id: "v2", title: "Behind the Scenes: Roasting Day", content_type: "video_script",
+    business_id: "b1", status: "pending",
+    description: "Take viewers behind the scenes at the roastery. Show the team, the craft, the smell you can almost feel through the screen.",
+    script: "[OPEN: Door opening to roastery, warm light]\nVO: \"Not many people get to see this.\"\n\n[CUT: Roaster checking temperature dial]\nSFX: mechanical hum, beans shifting\n\n[CUT: Beans pouring out, crackling]\nVO: \"Every batch — a labor of love.\"\n\n[CUT: Team cupping session]\nSFX: slurping, quiet laughter\n\n[CLOSE: Bags stamped with Acme logo]\nVO: \"Taste the craft. Link in bio.\"",
+    gradient: "linear-gradient(135deg,#7c2d12,#c2410c,#ea580c)"
+  },
+  {
+    id: "v3", title: "Customer Reaction Challenge", content_type: "video_script",
+    business_id: "b1", status: "pending",
+    description: "Film real customers trying our new Ethiopian single-origin for the first time. Capture genuine surprise and delight.",
+    script: "[OPEN: Text 'We asked strangers to try our new roast']\nMusic: upbeat, feel-good\n\n[CUT: Person 1 sips, eyes widen]\n\"Wait, that's incredible.\"\n\n[CUT: Person 2 laughs]\n\"This doesn't taste like any coffee I've had.\"\n\n[CUT: Person 3]\n\"Where do I buy this?!\"\n\n[CLOSE: Acme logo + 'Link in bio']",
+    gradient: "linear-gradient(135deg,#166534,#16a34a,#4ade80)"
+  },
+  {
+    id: "v4", title: "Product Launch: Drift Analytics", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "Announce the new analytics dashboard with a fast-paced montage of the UI, data flowing, insights appearing.",
+    script: "[OPEN: Dark screen, cursor appears]\nVO: \"Your data has been trying to tell you something.\"\n\n[CUT: Dashboard loading, charts animate in]\nSFX: soft digital chime\n\n[CUT: Rapid montage — filters, drill-downs, exports]\nVO: \"Now you can finally listen.\"\n\n[CLOSE: Drift logo pulse]\nVO: \"Drift Analytics. See what you've been missing.\"",
+    gradient: "linear-gradient(135deg,#1e3a5f,#2563eb,#60a5fa)"
+  },
+  {
+    id: "v5", title: "Founder Story: Why We Built Drift", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "Authentic founder-led storytelling about the problem that inspired Drift and why existing solutions weren't cutting it.",
+    script: "[OPEN: Founder at desk, natural lighting]\nVO: \"I spent 3 years building reports nobody read.\"\n\n[CUT: Whiteboard sketches, early prototypes]\nVO: \"So I asked — what if the data came to you?\"\n\n[CUT: First customer reaction]\nSFX: notification ding\n\n[CLOSE: Product shot + team]\nVO: \"That's Drift. Built by people who were tired of dashboards.\"",
+    gradient: "linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)"
+  },
+  {
+    id: "v6", title: "Fall Collection Teaser", content_type: "video_script",
+    business_id: "b3", status: "pending",
+    description: "Moody, editorial teaser for the fall/winter collection. Think runway meets street style.",
+    script: "[OPEN: Slow pan across fabrics hanging]\nSFX: ambient drone, fabric rustling\n\n[CUT: Model walks through fog, silhouette]\nVO: \"Darkness is not the absence of light.\"\n\n[CUT: Close-up details — stitching, texture, buttons]\nSFX: clock ticking\n\n[CUT: Full look reveal, wind catches coat]\nVO: \"It's where you find yourself.\"\n\n[CLOSE: MAISON NOIR — Fall '26]\nSFX: deep bass hit",
+    gradient: "linear-gradient(135deg,#1c1917,#44403c,#78716c)"
+  },
+
+  // ── LinkedIn Posts ──
+  {
+    id: "l1", title: "The 5am Coffee Myth", content_type: "linkedin_post",
+    business_id: "b1", status: "pending",
+    description: "Thought leadership post debunking the hustle-culture 5am coffee trope while subtly positioning our slow-brew philosophy.",
+    script: "\"I wake up at 5am and drink black coffee.\"\n\nCool. But does it taste good?\n\nWe've been so obsessed with productivity hacks that we forgot coffee is supposed to be enjoyed.\n\nHere's what I've learned running a specialty roastery for 8 years:\n\n→ The best cup takes 4 minutes, not 40 seconds\n→ Your beans shouldn't taste like \"dark roast\" — they should taste like WHERE they grew\n→ The ritual matters more than the caffeine\n\nSlow down. Your morning deserves better.\n\n#coffee #slowliving #specialty",
+    gradient: "linear-gradient(135deg,#1e1b4b,#4338ca,#6366f1)"
+  },
+  {
+    id: "l2", title: "Why We Killed Our Dashboard", content_type: "linkedin_post",
+    business_id: "b2", status: "pending",
+    description: "Contrarian take about removing the traditional dashboard in favor of proactive alerts — drives conversation and product interest.",
+    script: "Last month we did something radical.\n\nWe killed our dashboard.\n\nNot because it was broken. Because it was working perfectly — and nobody was using it.\n\n87% of our users logged in, glanced at the charts, and logged out. No action taken.\n\nSo we replaced it with something better: insights that come to YOU.\n\n• Anomaly? Slack ping.\n• Trend shift? Email digest.\n• Opportunity? Push notification.\n\nThe best dashboard is one you never have to open.\n\nHot take? Maybe. But our activation rate is up 340%.\n\nWhat's your most-ignored dashboard?",
+    gradient: "linear-gradient(135deg,#172554,#1e40af,#3b82f6)"
+  },
+  {
+    id: "l3", title: "Fashion Has a Waste Problem", content_type: "linkedin_post",
+    business_id: "b3", status: "pending",
+    description: "Sustainability-focused post that positions Maison Noir's approach to ethical fashion and limited runs.",
+    script: "92 million tons of textile waste. Every year.\n\nThat's not a fashion problem. That's a humanity problem.\n\nAt Maison Noir, we made a decision early:\n\n1. Never produce more than we can sell\n2. Every fabric is deadstock or certified organic\n3. If it can't last 10 years, we don't make it\n\nOur margins are thinner. Our drops are smaller.\n\nBut our pieces don't end up in landfills.\n\nFashion should outlive trends.\n\n♻️ What brands are doing it right? Tag them below.",
+    gradient: "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)"
+  },
+
+  // ── Support Replies ──
+  {
+    id: "s1", title: "RE: Can't export CSV from analytics", content_type: "support_reply",
+    business_id: "b2", status: "pending",
+    description: "Customer reported CSV export failing on large datasets. Known issue with fix shipping next week.",
+    script: "Hi Sarah,\n\nThanks for flagging this — you're right, CSV exports are failing for datasets over 50K rows. Our engineering team identified the root cause (a timeout in our export queue) and the fix ships Tuesday.\n\nIn the meantime, here's a workaround:\n1. Add a date filter to reduce the row count\n2. Export in chunks (e.g., month by month)\n3. Or I can generate the full export for you right now — just say the word.\n\nSorry for the friction, and thanks for your patience.\n\nBest,\nDrift Support",
+    gradient: "linear-gradient(135deg,#422006,#92400e,#d97706)"
+  },
+  {
+    id: "s2", title: "RE: Billing discrepancy on last invoice", content_type: "support_reply",
+    business_id: "b2", status: "pending",
+    description: "Customer noticed double charge. Need to investigate and credit their account.",
+    script: "Hi Marcus,\n\nI looked into your account and you're absolutely right — you were charged twice for the Pro plan on March 14. This was caused by a retry in our payment processor when the first charge took longer than expected.\n\nHere's what I've done:\n• Issued a full refund of $49.00 (you'll see it in 3-5 business days)\n• Added a $20 credit to your account as an apology\n• Flagged this to our billing team to prevent recurrence\n\nYour next invoice will reflect the credit automatically.\n\nDeep apologies for the hassle. Let me know if anything else looks off.\n\nBest,\nDrift Support",
+    gradient: "linear-gradient(135deg,#3b0764,#7e22ce,#a855f7)"
+  },
+  {
+    id: "s3", title: "RE: Feature request — dark mode", content_type: "support_reply",
+    business_id: "b2", status: "pending",
+    description: "Popular feature request. Not on immediate roadmap but should acknowledge demand.",
+    script: "Hi Jordan,\n\nYou're not the first person to ask for dark mode — and honestly, I want it too 😄\n\nIt's on our roadmap but not in the current sprint. Here's the honest timeline:\n• Q3: Design exploration begins\n• Q4: Beta release for Pro users\n\nIn the meantime, you might like our browser extension which adds a system-theme toggle (works with OS dark mode): drift.app/extension\n\nI've added your vote to the feature request — every vote genuinely moves the priority needle.\n\nThanks for caring enough to ask!\n\nCheers,\nDrift Support",
+    gradient: "linear-gradient(135deg,#064e3b,#047857,#10b981)"
+  },
+];
+
+const PERSONAS = [
+  {
+    id: "content-creator", name: "Content Creator", icon: "🎬",
+    types: ["video_script", "linkedin_post"],
+    labels: { right: "Approve", left: "Reject", up: "Variant", down: "More Ideas" },
+    colors: { right: "#22c55e", left: "#ef4444", up: "#a855f7", down: "#3b82f6" },
+    feedback: { right: false, left: true, up: true, down: true },
+    empty: "No content to review", cta: "Create your first video",
+  },
+  {
+    id: "support-agent", name: "Support Agent", icon: "🎧",
+    types: ["support_reply"],
+    labels: { right: "Send Reply", left: "Discard", up: "Escalate", down: "Template" },
+    colors: { right: "#22c55e", left: "#ef4444", up: "#f59e0b", down: "#3b82f6" },
+    feedback: { right: false, left: true, up: true, down: true },
+    empty: "Inbox zero — no tickets to review", cta: "Check back later",
+  },
+  {
+    id: "social-manager", name: "Social Manager", icon: "📱",
+    types: ["linkedin_post"],
+    labels: { right: "Schedule", left: "Skip", up: "Rewrite", down: "Alternatives" },
+    colors: { right: "#22c55e", left: "#ef4444", up: "#a855f7", down: "#3b82f6" },
+    feedback: { right: false, left: false, up: true, down: true },
+    empty: "No posts to review", cta: "Draft a new post",
+  },
+  {
+    id: "all", name: "Everything", icon: "⚡",
+    types: ["video_script", "linkedin_post", "support_reply"],
+    labels: { right: "Approve", left: "Reject", up: "Variant", down: "More Ideas" },
+    colors: { right: "#22c55e", left: "#ef4444", up: "#a855f7", down: "#3b82f6" },
+    feedback: { right: false, left: true, up: true, down: true },
+    empty: "Nothing to review right now", cta: "Create something new",
+  },
+];
+
+const TYPE_LABELS = { video_script: "Video Script", linkedin_post: "LinkedIn Post", support_reply: "Support Reply" };
+
+// ── State ──────────────────────────────────────────────────────
+
+let currentPersona = PERSONAS[0];
+let queue = [];
+let undoStack = [];
+let stats = { approved: 0, rejected: 0, variants: 0, ideas: 0 };
+let pendingDirection = null;
+let animating = false;
+
+// ── Init ───────────────────────────────────────────────────────
+
+function init() {
+  renderPersonaStrip();
+  switchPersona(PERSONAS[0]);
+  document.addEventListener("keydown", handleKeyboard);
+  document.getElementById("feedback-overlay").addEventListener("click", closeFeedback);
+}
+
+// ── Persona strip ──────────────────────────────────────────────
+
+function renderPersonaStrip() {
+  const strip = document.getElementById("persona-strip");
+  strip.innerHTML = PERSONAS.map(p => {
+    const count = DEMO_CARDS.filter(c => p.types.includes(c.content_type) && c.status === "pending").length;
+    return `<button class="persona-chip" data-id="${p.id}" onclick="switchPersona(PERSONAS.find(x=>x.id==='${p.id}'))">
+      ${p.icon} ${p.name} <span class="count">${count}</span>
+    </button>`;
+  }).join("");
+}
+
+function switchPersona(p) {
+  currentPersona = p;
+  queue = DEMO_CARDS.filter(c => p.types.includes(c.content_type) && c.status === "pending");
+
+  document.querySelectorAll(".persona-chip").forEach(el => {
+    el.classList.toggle("active", el.dataset.id === p.id);
+  });
+
+  renderCards();
+  renderActionBar();
+  updateHints();
+  updateStats();
+}
+
+// ── Card rendering ─────────────────────────────────────────────
+
+function renderCards() {
+  const stack = document.getElementById("card-stack");
+  const empty = document.getElementById("empty-state");
+
+  if (queue.length === 0) {
+    stack.innerHTML = "";
+    empty.classList.add("visible");
+    document.getElementById("empty-title").textContent = currentPersona.empty;
+    document.getElementById("empty-desc").textContent = currentPersona.cta;
+    return;
+  }
+
+  empty.classList.remove("visible");
+  const show = queue.slice(0, 3);
+
+  stack.innerHTML = show.map((card, i) => {
+    const biz = BUSINESSES.find(b => b.id === card.business_id);
+    const cls = i === 0 ? "active" : i === 1 ? "behind-1" : "behind-2";
+    return `<div class="card ${cls}" data-id="${card.id}">
+      <div class="card-visual" style="background:${card.gradient}">
+        <span class="type-badge ${card.content_type}">${TYPE_LABELS[card.content_type]}</span>
+      </div>
+      <div class="card-body">
+        <h2>${card.title}</h2>
+        <div class="desc">${card.description}</div>
+        <div class="script-preview">${card.script.slice(0, 280)}${card.script.length > 280 ? "…" : ""}</div>
+        <div class="campaign-tag">
+          <span style="background:${biz?.color ?? '#666'}"></span>
+          ${biz?.name ?? "Unknown"}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Action bar ─────────────────────────────────────────────────
+
+function renderActionBar() {
+  const bar = document.getElementById("action-bar");
+  const p = currentPersona;
+  const canUndo = undoStack.length > 0;
+
+  bar.innerHTML = `
+    <button class="action-btn undo-btn ${canUndo ? "" : "disabled"}" onclick="undo()" title="Undo (Z)">↩</button>
+    <button class="action-btn reject" style="border-color:${p.colors.left};color:${p.colors.left}" onclick="swipe('left')" title="${p.labels.left} (←)">
+      ✕<span class="label" style="color:${p.colors.left}">${p.labels.left}</span>
+    </button>
+    <button class="action-btn ideas" style="border-color:${p.colors.down};color:${p.colors.down}" onclick="swipe('down')" title="${p.labels.down} (↓)">
+      ↓<span class="label" style="color:${p.colors.down}">${p.labels.down}</span>
+    </button>
+    <button class="action-btn variant" style="border-color:${p.colors.up};color:${p.colors.up}" onclick="swipe('up')" title="${p.labels.up} (↑)">
+      ↑<span class="label" style="color:${p.colors.up}">${p.labels.up}</span>
+    </button>
+    <button class="action-btn approve" style="border-color:${p.colors.right};color:${p.colors.right}" onclick="swipe('right')" title="${p.labels.right} (→)">
+      ✓<span class="label" style="color:${p.colors.right}">${p.labels.right}</span>
+    </button>
+  `;
+}
+
+// ── Swipe logic ────────────────────────────────────────────────
+
+function swipe(direction) {
+  if (animating || queue.length === 0) return;
+
+  if (currentPersona.feedback[direction]) {
+    pendingDirection = direction;
+    openFeedback(direction);
+    return;
+  }
+
+  executeSwipe(direction);
+}
+
+function executeSwipe(direction, feedback) {
+  if (animating || queue.length === 0) return;
+  animating = true;
+
+  const card = queue[0];
+  const el = document.querySelector(".card.active");
+  if (!el) { animating = false; return; }
+
+  // Show indicator
+  const indicator = document.getElementById("swipe-indicator");
+  const label = currentPersona.labels[direction];
+  const color = currentPersona.colors[direction];
+  indicator.textContent = label;
+  indicator.style.color = color;
+  indicator.style.opacity = "1";
+
+  el.classList.add("swiping", `swipe-${direction}`);
+
+  // Track stats
+  const dirMap = { right: "approved", left: "rejected", up: "variants", down: "ideas" };
+  stats[dirMap[direction]]++;
+
+  // Update card status
+  card.status = dirMap[direction];
+  undoStack.push({ card, direction, feedback });
+  queue.shift();
+
+  setTimeout(() => {
+    indicator.style.opacity = "0";
+    renderCards();
+    renderActionBar();
+    updateStats();
+    renderPersonaStrip();
+    animating = false;
+
+    const toastMap = {
+      right: { text: `${card.title} — ${label}`, color },
+      left: { text: `${card.title} — ${label}`, color },
+      up: { text: `${card.title} — ${label} requested`, color },
+      down: { text: `${card.title} — ${label} requested`, color },
+    };
+    showToast(toastMap[direction].text, toastMap[direction].color);
+  }, 400);
+}
+
+// ── Undo ───────────────────────────────────────────────────────
+
+function undo() {
+  if (undoStack.length === 0 || animating) return;
+
+  const last = undoStack.pop();
+  last.card.status = "pending";
+
+  const dirMap = { right: "approved", left: "rejected", up: "variants", down: "ideas" };
+  stats[dirMap[last.direction]]--;
+
+  queue.unshift(last.card);
+  renderCards();
+  renderActionBar();
+  updateStats();
+  renderPersonaStrip();
+  showToast(`Restored: ${last.card.title}`, "#a1a1aa");
+}
+
+// ── Feedback drawer ────────────────────────────────────────────
+
+function openFeedback(direction) {
+  const label = currentPersona.labels[direction];
+  document.getElementById("drawer-title").textContent = `${label} — Add feedback`;
+  document.getElementById("feedback-input").value = "";
+  document.getElementById("feedback-overlay").classList.add("open");
+  document.getElementById("feedback-drawer").classList.add("open");
+  setTimeout(() => document.getElementById("feedback-input").focus(), 350);
+}
+
+function closeFeedback() {
+  document.getElementById("feedback-overlay").classList.remove("open");
+  document.getElementById("feedback-drawer").classList.remove("open");
+  pendingDirection = null;
+}
+
+function submitFeedback() {
+  const feedback = document.getElementById("feedback-input").value;
+  closeFeedback();
+  if (pendingDirection) {
+    const dir = pendingDirection;
+    pendingDirection = null;
+    executeSwipe(dir, feedback);
+  }
+}
+
+// ── Keyboard ───────────────────────────────────────────────────
+
+function handleKeyboard(e) {
+  if (document.getElementById("feedback-drawer").classList.contains("open")) {
+    if (e.key === "Escape") closeFeedback();
+    if (e.key === "Enter" && e.metaKey) submitFeedback();
+    return;
+  }
+
+  switch (e.key) {
+    case "ArrowRight": e.preventDefault(); swipe("right"); break;
+    case "ArrowLeft": e.preventDefault(); swipe("left"); break;
+    case "ArrowUp": e.preventDefault(); swipe("up"); break;
+    case "ArrowDown": e.preventDefault(); swipe("down"); break;
+    case "z": case "Z": if (!e.metaKey && !e.ctrlKey) undo(); break;
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+
+function updateStats() {
+  document.getElementById("stat-approved").textContent = stats.approved;
+  document.getElementById("stat-rejected").textContent = stats.rejected;
+  document.getElementById("stat-queue").textContent = queue.length;
+}
+
+function updateHints() {
+  document.getElementById("hint-right").textContent = currentPersona.labels.right;
+  document.getElementById("hint-left").textContent = currentPersona.labels.left;
+  document.getElementById("hint-up").textContent = currentPersona.labels.up;
+  document.getElementById("hint-down").textContent = currentPersona.labels.down;
+}
+
+let toastTimer;
+function showToast(text, color) {
+  const toast = document.getElementById("toast");
+  toast.querySelector(".dot").style.background = color;
+  toast.querySelector("span").textContent = text;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
+}
+
+init();
+</script>
+</body>
+</html>

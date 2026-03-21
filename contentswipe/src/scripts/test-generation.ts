@@ -2,45 +2,42 @@ import "dotenv/config";
 import { supabase } from "../lib/supabase.js";
 
 /**
- * Test script: creates a generation job for a card so the worker
+ * Test script: creates a generation job for a content item so the worker
  * can pick it up and run the full pipeline.
  *
  * Usage: npx tsx src/scripts/test-generation.ts
  */
 async function testGeneration() {
-  // Fetch a pending card
-  const { data: cards } = await supabase
-    .from("content_queue")
+  const { data: items } = await supabase
+    .from("content_items")
     .select("*")
-    .eq("status", "pending")
+    .eq("review_status", "pending")
     .limit(1);
 
-  if (!cards?.length) {
-    console.log("No pending cards. Run `npm run seed` first.");
+  if (!items?.length) {
+    console.log("No pending items. Run `npm run seed` first.");
     return;
   }
 
-  const card = cards[0];
-  console.log(`Using card: "${card.title}" (${card.id})`);
+  const item = items[0];
+  console.log(`Using item: "${item.title}" (${item.id}) [${item.content_type}/${item.channel}]`);
 
-  // Get the business context
   let businessName = "Acme Coffee Co";
-  if (card.business_id) {
+  if (item.business_id) {
     const { data: biz } = await supabase
       .from("businesses")
       .select("name")
-      .eq("id", card.business_id)
+      .eq("id", item.business_id)
       .single();
     if (biz) businessName = biz.name;
   }
 
-  // Create a generation job
-  const prompt = `Create a 15-20 second short-form video for ${businessName}: ${card.title}. ${card.description ?? ""}`;
+  const prompt = `Create a 15-20 second short-form video for ${businessName}: ${item.title}. ${item.body_text ?? ""}`;
 
   const { data: job, error } = await supabase
     .from("generation_jobs")
     .insert({
-      content_queue_id: card.id,
+      content_item_id: item.id,
       job_type: "initial",
       prompt,
     })
@@ -57,11 +54,7 @@ async function testGeneration() {
   console.log(`  Status: ${job.status}`);
   console.log(`  Prompt: ${prompt.slice(0, 100)}...`);
   console.log(`\nNow run: npm run worker`);
-  console.log("The worker will pick up this job and run the full pipeline:");
-  console.log("  Phase 1: Gemini script planning");
-  console.log("  Phase 2: ElevenLabs audio + Veo video (parallel)");
-  console.log("  Phase 3: FFmpeg composition");
-  console.log("  Phase 4: Upload to Supabase Storage");
+  console.log("The worker will pick up this job and run the full pipeline.");
 }
 
 testGeneration().catch(console.error);
