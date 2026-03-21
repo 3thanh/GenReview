@@ -7,6 +7,7 @@ interface FeedbackDrawerProps {
   open: boolean;
   direction: SwipeDirection | null;
   persona: Persona;
+  initialText?: string;
   onSubmit: (feedback: string) => void;
   onCancel: () => void;
 }
@@ -15,6 +16,7 @@ export function FeedbackDrawer({
   open,
   direction,
   persona,
+  initialText = "",
   onSubmit,
   onCancel,
 }: FeedbackDrawerProps) {
@@ -23,10 +25,16 @@ export function FeedbackDrawer({
 
   useEffect(() => {
     if (open) {
-      setText("");
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setText(initialText);
+      setTimeout(() => {
+        const el = inputRef.current;
+        if (el) {
+          el.focus();
+          el.setSelectionRange(el.value.length, el.value.length);
+        }
+      }, 100);
     }
-  }, [open]);
+  }, [open, initialText]);
 
   const label = direction ? persona.swipeLabels[direction] : null;
 

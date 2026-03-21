@@ -42,6 +42,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingDirection, setPendingDirection] = useState<SwipeDirection | null>(null);
+  const [initialText, setInitialText] = useState("");
   const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [swiping, setSwiping] = useState(false);
@@ -89,6 +90,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
     (feedback: string) => {
       if (!pendingDirection) return;
       setDrawerOpen(false);
+      setInitialText("");
 
       setSwiping(true);
       setExitDirection(pendingDirection);
@@ -105,11 +107,13 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
   const handleFeedbackCancel = useCallback(() => {
     setDrawerOpen(false);
     setPendingDirection(null);
+    setInitialText("");
   }, []);
 
-  const handleStartTyping = useCallback(() => {
+  const handleStartTyping = useCallback((key: string) => {
     if (!currentCard || drawerOpen) return;
     setPendingDirection("left");
+    setInitialText(key);
     setDrawerOpen(true);
   }, [currentCard, drawerOpen]);
 
@@ -193,6 +197,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         open={drawerOpen}
         direction={pendingDirection}
         persona={persona}
+        initialText={initialText}
         onSubmit={handleFeedbackSubmit}
         onCancel={handleFeedbackCancel}
       />

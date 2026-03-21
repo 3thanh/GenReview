@@ -4,7 +4,7 @@ import type { SwipeDirection } from "../types/database";
 interface UseKeyboardOptions {
   onSwipe: (direction: SwipeDirection) => void;
   onUndo: () => void;
-  onStartTyping: () => void;
+  onStartTyping: (key: string) => void;
   onTogglePlay: () => void;
   onScrollChat?: (direction: "up" | "down") => void;
   chatScrollActive?: boolean;
@@ -69,7 +69,8 @@ export function useKeyboard({
           break;
         default:
           if (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)) {
-            onStartTyping();
+            e.preventDefault();
+            onStartTyping(e.key);
           }
           break;
       }
