@@ -12,6 +12,8 @@ import {
   Film,
   Volume2,
   VolumeX,
+  Maximize2,
+  Minimize2,
   ChevronDown,
   X,
   Pencil,
@@ -44,6 +46,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const [duration, setDuration] = useState(0);
     const [muted, setMuted] = useState(true);
     const [volume, setVolume] = useState(0.8);
+    const [fullscreen, setFullscreen] = useState(false);
     const [scriptOpen, setScriptOpen] = useState(false);
     const [editing, setEditing] = useState(false);
     const [editedScript, setEditedScript] = useState(card.script ?? "");
@@ -99,6 +102,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       setScriptOpen(false);
       setEditing(false);
       setEditedScript(card.script ?? "");
+      setFullscreen(false);
     }, [card.id, card.script]);
 
     const handleToggle = () => {
@@ -146,91 +150,111 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+    const videoOverlay = (isFs: boolean) => (
+      <>
+        <button
+          onClick={handleToggle}
+          className="absolute inset-0 flex items-center justify-center bg-slate-950/0 transition-colors group-hover:bg-slate-950/20"
+        >
+          <div className={`flex items-center justify-center rounded-full bg-white/20 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100 ${isFs ? "h-14 w-14" : "h-11 w-11"}`}>
+            {isPlaying ? (
+              <Pause className={isFs ? "h-5 w-5 text-white" : "h-4 w-4 text-white"} />
+            ) : (
+              <Play className={`ml-0.5 ${isFs ? "h-5 w-5 text-white" : "h-4 w-4 text-white"}`} />
+            )}
+          </div>
+        </button>
+
+        <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-white/30 bg-white/22 px-2 py-1 backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => setMuted((current) => !current)}
+            className="text-white/90 transition-colors hover:text-white"
+            aria-label={muted ? "Unmute video" : "Mute video"}
+          >
+            {muted ? (
+              <VolumeX className="h-3.5 w-3.5" />
+            ) : (
+              <Volume2 className="h-3.5 w-3.5" />
+            )}
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={muted ? 0 : volume}
+            onChange={(event) =>
+              handleVolumeChange(Number(event.target.value))
+            }
+            className="h-1 w-16 accent-white"
+            aria-label="Video volume"
+          />
+        </div>
+
+        <div className="absolute right-2 top-2 flex items-center gap-1.5">
+          {!isPlaying && duration > 0 && (
+            <div className="rounded-full border border-white/25 bg-slate-950/45 px-2.5 py-0.5 backdrop-blur-md">
+              <span className="font-mono text-[11px] font-medium text-white">
+                {formatTime(currentTime)}
+              </span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setFullscreen((v) => !v)}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-white/25 bg-slate-950/45 text-white/90 backdrop-blur-md transition-colors hover:bg-slate-950/60 hover:text-white"
+            aria-label={isFs ? "Exit fullscreen" : "Fullscreen"}
+          >
+            {isFs ? (
+              <Minimize2 className="h-3.5 w-3.5" />
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
+
+        {duration > 0 && (
+          <div className="absolute bottom-0 left-0 right-0">
+            <div className="h-0.5 bg-white/15">
+              <div
+                className="h-full bg-white/75 transition-[width] duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </>
+    );
+
     return (
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-3">
-        <h2 className="mb-2 text-lg font-bold leading-snug text-slate-900">
+        <h2 className="mb-1 text-base font-bold leading-snug text-slate-900">
           {card.title}
         </h2>
 
         {card.body_text && (
-          <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-slate-500">
+          <p className="mb-1.5 line-clamp-2 text-[11px] leading-relaxed text-slate-500">
             {card.body_text}
           </p>
         )}
 
         {card.video_url ? (
-          <div className="group relative mb-2 aspect-[16/7] overflow-hidden rounded-2xl bg-slate-900">
+          <div className="group relative mb-2 min-h-0 flex-1 overflow-hidden rounded-2xl bg-slate-900">
             <video
               ref={videoRef}
               src={card.video_url}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-contain"
               loop
               muted
               playsInline
               autoPlay
               poster={card.thumbnail_url ?? undefined}
             />
-            <button
-              onClick={handleToggle}
-              className="absolute inset-0 flex items-center justify-center bg-slate-950/0 transition-colors group-hover:bg-slate-950/20"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100">
-                {isPlaying ? (
-                  <Pause className="h-4 w-4 text-white" />
-                ) : (
-                  <Play className="ml-0.5 h-4 w-4 text-white" />
-                )}
-              </div>
-            </button>
-
-            <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-white/30 bg-white/22 px-2 py-1 backdrop-blur-md">
-              <button
-                type="button"
-                onClick={() => setMuted((current) => !current)}
-                className="text-white/90 transition-colors hover:text-white"
-                aria-label={muted ? "Unmute video" : "Mute video"}
-              >
-                {muted ? (
-                  <VolumeX className="h-3.5 w-3.5" />
-                ) : (
-                  <Volume2 className="h-3.5 w-3.5" />
-                )}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={muted ? 0 : volume}
-                onChange={(event) =>
-                  handleVolumeChange(Number(event.target.value))
-                }
-                className="h-1 w-16 accent-white"
-                aria-label="Video volume"
-              />
-            </div>
-
-            {!isPlaying && duration > 0 && (
-              <div className="absolute right-2 top-2 rounded-full border border-white/25 bg-slate-950/45 px-2.5 py-0.5 backdrop-blur-md">
-                <span className="font-mono text-[11px] font-medium text-white">
-                  {formatTime(currentTime)}
-                </span>
-              </div>
-            )}
-
-            {duration > 0 && (
-              <div className="absolute bottom-0 left-0 right-0">
-                <div className="h-0.5 bg-white/15">
-                  <div
-                    className="h-full bg-white/75 transition-[width] duration-200"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            {videoOverlay(false)}
           </div>
         ) : card.thumbnail_url ? (
-          <div className="relative mb-2 aspect-[16/7] overflow-hidden rounded-2xl bg-slate-900">
+          <div className="relative mb-2 min-h-0 flex-1 overflow-hidden rounded-2xl bg-slate-900">
             <img
               src={card.thumbnail_url}
               alt={card.title}
@@ -248,11 +272,33 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             </div>
           </div>
         ) : (
-          <div className="surface-muted mb-2 flex aspect-[16/7] flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed">
+          <div className="surface-muted mb-2 flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed">
             <Film className="h-6 w-6 text-slate-400" />
             <span className="text-[10px] text-slate-500">
               Video generating…
             </span>
+          </div>
+        )}
+
+        {fullscreen && card.video_url && (
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setFullscreen(false)}
+          >
+            <div
+              className="group relative flex h-[92vh] max-w-[min(92vw,600px)] items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <video
+                src={card.video_url}
+                className="h-full max-h-full w-auto rounded-2xl object-contain"
+                loop
+                muted={muted}
+                playsInline
+                autoPlay
+              />
+              {videoOverlay(true)}
+            </div>
           </div>
         )}
 
