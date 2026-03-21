@@ -50,7 +50,7 @@ interface FeedCachePayload {
 }
 
 const FEED_CACHE_KEY_PREFIX = "contentswipe.feed.v1";
-const DEMO_FEED_CACHE_KEY_PREFIX = "contentswipe.demoFeed.v5";
+// Demo mode always serves fresh seeded cards — no localStorage caching
 
 function insertSorted(cards: ContentItem[], nextCard: ContentItem): ContentItem[] {
   const next = [...cards.filter((card) => card.id !== nextCard.id), nextCard];
@@ -80,9 +80,6 @@ function getFeedCacheKey(persona: Persona): string {
   return `${FEED_CACHE_KEY_PREFIX}.${persona.id}`;
 }
 
-function getDemoFeedCacheKey(persona: Persona): string {
-  return `${DEMO_FEED_CACHE_KEY_PREFIX}.${persona.id}`;
-}
 
 function getContentTypesSignature(contentTypes: Persona["contentTypes"]): string {
   return [...contentTypes].sort().join("|");
@@ -127,37 +124,7 @@ function readFeedCache(persona: Persona): ContentItem[] {
 }
 
 function readDemoFeedCache(persona: Persona): ContentItem[] {
-  if (typeof window === "undefined") {
-    return getSeededDemoCards(persona);
-  }
-
-  const storedValue = window.localStorage.getItem(getDemoFeedCacheKey(persona));
-  if (!storedValue) {
-    return getSeededDemoCards(persona);
-  }
-
-  try {
-    const parsed = JSON.parse(storedValue) as FeedCachePayload;
-    if (!parsed || !Array.isArray(parsed.cards) || !Array.isArray(parsed.contentTypes)) {
-      return getSeededDemoCards(persona);
-    }
-
-    const cachedSignature = getContentTypesSignature(parsed.contentTypes);
-    const liveSignature = getContentTypesSignature(persona.contentTypes);
-    if (cachedSignature !== liveSignature) {
-      return getSeededDemoCards(persona);
-    }
-
-    const cached = parsed.cards.filter(isContentItemLike);
-
-    if (cached.length === 0) {
-      return getSeededDemoCards(persona);
-    }
-
-    return cached;
-  } catch {
-    return getSeededDemoCards(persona);
-  }
+  return getSeededDemoCards(persona);
 }
 
 function writeFeedCache(persona: Persona, cards: ContentItem[]) {
@@ -175,19 +142,8 @@ function writeFeedCache(persona: Persona, cards: ContentItem[]) {
   window.localStorage.setItem(getFeedCacheKey(persona), JSON.stringify(payload));
 }
 
-function writeDemoFeedCache(persona: Persona, cards: ContentItem[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const payload: FeedCachePayload = {
-    version: 1,
-    contentTypes: [...persona.contentTypes],
-    cards,
-    updatedAt: new Date().toISOString(),
-  };
-
-  window.localStorage.setItem(getDemoFeedCacheKey(persona), JSON.stringify(payload));
+function writeDemoFeedCache(_persona: Persona, _cards: ContentItem[]) {
+  // Demo mode always uses fresh seeded cards — no caching
 }
 
 function getInitialCards(persona: Persona, sourceMode: FeedSourceMode): ContentItem[] {
