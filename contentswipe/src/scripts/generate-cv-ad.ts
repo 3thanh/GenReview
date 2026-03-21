@@ -27,7 +27,7 @@ interface Scene {
 }
 
 const STYLE =
-  "ultra high-quality cinematic photography, dramatic volumetric lighting, shallow depth of field, rich dark tones with neon accent lighting, tech startup aesthetic, 9:16 vertical composition";
+  "realistic editorial photography, shallow depth of field, natural lighting, candid moment, 35mm film grain, muted warm tones, 9:16 vertical composition";
 
 const SCENES: Scene[] = [
   {
@@ -35,9 +35,9 @@ const SCENES: Scene[] = [
     narration: "This is where AI builders actually connect.",
     targetDuration: 3,
     imagePrompts: [
-      `Close-up of hands typing fast on a laptop keyboard with lines of code reflected in the screen, dark room with monitor glow, neon blue and purple ambient lighting, motion blur on fingers, ${STYLE}`,
-      `A young founder in a hoodie presenting at a whiteboard covered in AI architecture diagrams late at night, intense focused expression, laptop open beside them, coffee cups scattered, ${STYLE}`,
-      `Extreme close-up of a glowing terminal screen showing neural network training logs with loss curves decreasing, green text on dark background, lens flare from screen, ${STYLE}`,
+      `A developer sitting at a wooden desk with a laptop open showing code, soft daylight from a window, a coffee mug and notebook beside the laptop, calm focused atmosphere, ${STYLE}`,
+      `A person standing at a whiteboard sketching a simple diagram with a dry-erase marker, casual office setting, natural overhead light, relaxed posture, ${STYLE}`,
+      `A laptop screen displaying a dark code editor with colorful syntax highlighting, the laptop on a clean desk, a plant in the background, soft ambient room light, ${STYLE}`,
     ],
   },
   {
@@ -46,8 +46,8 @@ const SCENES: Scene[] = [
       "Thousands of founders, engineers, and investors…",
     targetDuration: 4,
     imagePrompts: [
-      `A packed tech event venue from the back, hundreds of people standing and networking, stage with bright lights and a demo screen, warm golden and blue event lighting, energy and excitement, ${STYLE}`,
-      `A crowded hackathon room with rows of developers at long tables, laptops glowing, people leaning over to collaborate, overhead string lights, late night energy, ${STYLE}`,
+      `A wide shot of a tech meetup in a modern loft space, groups of people standing and chatting with lanyards, warm string lights overhead, wooden floors, relaxed evening atmosphere, ${STYLE}`,
+      `A long communal table at a hackathon with people working on laptops side by side, water bottles and snacks on the table, soft overhead lighting, collaborative energy, ${STYLE}`,
     ],
   },
   {
@@ -56,8 +56,8 @@ const SCENES: Scene[] = [
       "…meeting through hackathons, events, and a global AI community.",
     targetDuration: 4,
     imagePrompts: [
-      `Two people having an animated conversation at a networking event, one holding a drink, name badges visible, warm bokeh lights in background, genuine connection moment, ${STYLE}`,
-      `A developer doing a live product demo on stage, large screen behind them showing an AI app interface, audience watching intently, dramatic stage lighting, ${STYLE}`,
+      `Two people having a conversation at a casual networking event, one holding a paper coffee cup, name badges on lanyards, blurred crowd in the background, warm natural light, ${STYLE}`,
+      `A speaker presenting on a small stage with a projector screen behind them, a seated audience of about thirty people in folding chairs, simple venue with brick walls, ${STYLE}`,
     ],
   },
   {
@@ -66,8 +66,8 @@ const SCENES: Scene[] = [
       "If you're serious about AI — this is where you show up.",
     targetDuration: 3,
     imagePrompts: [
-      `A sleek dark-mode event platform UI on a laptop screen showing a grid of upcoming AI events with dates and locations, clean modern design, the laptop is on a minimalist desk with a plant, warm side lighting, ${STYLE}`,
-      `A group of diverse tech professionals walking into a modern venue with glass doors, the words AI SUMMIT visible on a sign above, golden hour light streaming in, confident purposeful energy, ${STYLE}`,
+      `A laptop on a minimalist desk showing an event listing webpage, a small potted succulent beside it, warm afternoon light from a window, clean and calm workspace, ${STYLE}`,
+      `A small group of professionals walking through the glass entrance of a modern co-working space, natural daylight streaming in, casual business attire, purposeful stride, ${STYLE}`,
     ],
   },
   {
@@ -75,7 +75,7 @@ const SCENES: Scene[] = [
     narration: "Join Cerebral Valley.",
     targetDuration: 3,
     imagePrompts: [
-      `A bold minimalist dark background with the text CEREBRAL VALLEY in clean white sans-serif typography centered, a subtle neural network pattern glowing faintly behind the text, underneath in smaller text cerebralvalley.ai, elegant tech branding, ${STYLE}`,
+      `A clean dark gray background with the words CEREBRAL VALLEY in simple white sans-serif text centered in the frame, minimal and elegant, no other elements, studio-lit flat background, ${STYLE}`,
     ],
   },
 ];
