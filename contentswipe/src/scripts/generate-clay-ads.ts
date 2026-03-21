@@ -167,7 +167,7 @@ async function run() {
     console.log("\n[PHASE 2] Generating audio + video in parallel...");
     const [audioResult, videoBuffer] = await Promise.all([
       generateAudio(script.voiceover, script.sfx),
-      generateVideo(script.videoPrompt, script.cameraStyle ?? "smooth"),
+      generateVideo(script.videoPrompt, script.cameraStyle ?? "stable"),
     ]);
 
     const tmpVideoPath = `/tmp/contentswipe-clay-ads-raw.mp4`;

@@ -24,11 +24,9 @@ const CAMERA_PREFIXES: Record<CameraStyle, string> = {
  */
 export async function generateVideo(
   videoPrompt: string,
-  cameraStyle: CameraStyle = "smooth",
+  cameraStyle: CameraStyle = "stable",
 ): Promise<Buffer> {
-  const antiShakeSuffix = (cameraStyle === "stable" || cameraStyle === "smooth")
-    ? " Do not use handheld camera. No camera shake. No wobble. Keep the camera perfectly steady and stabilized throughout."
-    : "";
+  const antiShakeSuffix = " Do not use handheld camera. No camera shake. No wobble. No jitter. Keep the camera perfectly steady and stabilized throughout. Locked-off tripod or heavy studio rig. Zero handheld movement.";
   const styledPrompt = `${CAMERA_PREFIXES[cameraStyle]} ${videoPrompt}${antiShakeSuffix}`;
 
   console.log("\n[VIDEO] Starting Veo generation...");

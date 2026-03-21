@@ -210,7 +210,7 @@ async function run() {
     const [hariVO, sfxResult, videoBuffer] = await Promise.all([
       generateVoiceoverWithHari(script.voiceover, hariVoiceId),
       generateSfxOnly(script.sfx),
-      generateVideo(script.videoPrompt, script.cameraStyle ?? "smooth"),
+      generateVideo(script.videoPrompt, script.cameraStyle ?? "stable"),
     ]);
 
     const tmpVideoPath = `/tmp/contentswipe-clay-ads-hari-raw.mp4`;

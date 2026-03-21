@@ -89,11 +89,11 @@ async function processJob(job: QueuedJob): Promise<void> {
     }
 
     console.log("\n[PHASE 2] Generating audio + video in parallel...");
-    console.log(`  Camera style: ${script.cameraStyle ?? "smooth (default)"}`);
+    console.log(`  Camera style: ${script.cameraStyle ?? "stable (default)"}`);
 
     const [audioResult, videoBuffer] = await Promise.all([
       generateAudio(script.voiceover, script.sfx),
-      generateVideo(script.videoPrompt, script.cameraStyle ?? "smooth"),
+      generateVideo(script.videoPrompt, script.cameraStyle ?? "stable"),
     ]);
 
     const tmpVideoPath = `/tmp/contentswipe-raw-${job.id}.mp4`;
