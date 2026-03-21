@@ -134,7 +134,7 @@ const DEMO_CARDS: ContentItem[] = [
     script:
       "Open on beans cascading into a grinder. Close-up of steam curling from a fresh pour.\nCut to hands wrapping around a mug, morning light through the window.\nProduct shot with packaging. Text overlay: 'Sourced directly. Roasted weekly.'\nCTA: 'Elevate your morning — link in bio.'",
     image_url: null,
-    video_url: "https://rnqkjfrwkyupkyvygtpg.supabase.co/storage/v1/object/public/content-videos/generated/545ebfba-d9c6-4441-beb1-786caea9cc56.mp4",
+    video_url: "https://rnqkjfrwkyupkyvygtpg.supabase.co/storage/v1/object/public/content-videos/uploads/1774120474320-acme-coffee-morning-ritual.mp4",
     thumbnail_url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
     source_ref: "VID-12",
     source_bundle: null,
