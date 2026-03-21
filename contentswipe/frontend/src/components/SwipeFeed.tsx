@@ -307,7 +307,7 @@ export function SwipeFeed({
 
   return (
     <div className="flex h-[calc(100vh-5rem)] flex-col">
-      <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
+      <div className="relative z-20 flex items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <FeedSourceToggle value={feedSourceMode} onChange={onChangeFeedSourceMode} />
           <PersonaSwitcher
