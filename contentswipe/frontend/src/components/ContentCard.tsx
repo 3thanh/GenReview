@@ -28,11 +28,16 @@ export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
       support: "bg-amber-500/20 text-amber-300 border-amber-500/30",
     }[card.content_type];
 
+    const frameWidthClass =
+      card.content_type === "support"
+        ? "max-w-[min(96vw,1320px)]"
+        : "max-w-[min(92vw,980px)]";
+
     return (
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+      <div className={`mx-auto flex h-full w-full ${frameWidthClass}`}>
+        <div className="flex h-full max-h-[calc(100vh-12rem)] w-full flex-col overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/50">
           {/* Type badge + starred + channel */}
-          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <div className="flex items-center justify-between px-5 pt-4 pb-2 lg:px-6">
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs font-medium px-2.5 py-1 rounded-full border ${typeBadgeColor}`}
@@ -76,7 +81,7 @@ export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
 
           {/* Variant / lineage indicator */}
           {(card.variant_of || card.parent_id) && (
-            <div className="px-5 pb-3">
+            <div className="px-5 pb-3 lg:px-6">
               <span className="text-[11px] text-zinc-500 flex items-center gap-1.5">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 3v12" /><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />

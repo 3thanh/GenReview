@@ -72,11 +72,15 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
     const sourceRef = card.source_ref;
     const channel = card.channel ?? conversation?.channel ?? "intercom";
 
+    const scrollConversation = (direction: "up" | "down") => {
+      if (!scrollRef.current) return;
+      const delta = direction === "down" ? 120 : -120;
+      scrollRef.current.scrollBy({ top: delta, behavior: "smooth" });
+    };
+
     useImperativeHandle(ref, () => ({
       scrollChat(direction: "up" | "down") {
-        if (!scrollRef.current) return;
-        const delta = direction === "down" ? 120 : -120;
-        scrollRef.current.scrollBy({ top: delta, behavior: "smooth" });
+        scrollConversation(direction);
       },
     }));
 
@@ -105,8 +109,8 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
     const hasThread = messages.length > 0;
 
     return (
-      <div className="px-4 pb-4">
-        <div className="flex items-center justify-between mb-3">
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-5 lg:px-6">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
               <Headphones className="w-4 h-4 text-amber-400" />
@@ -128,61 +132,73 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
           )}
         </div>
 
-        {hasThread ? (
-          <div className="relative mb-3">
-            {canScrollUp && (
-              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-zinc-900 to-transparent z-10 pointer-events-none flex items-start justify-center pt-0.5">
-                <ChevronUp className="w-3.5 h-3.5 text-zinc-500 animate-pulse" />
+        <div className="flex min-h-0 flex-1 flex-col pr-1">
+          {hasThread ? (
+            <div className="relative mb-4 min-h-0 flex-1">
+              {canScrollUp && (
+                <button
+                  type="button"
+                  onClick={() => scrollConversation("up")}
+                  className="absolute left-0 right-0 top-0 z-10 flex h-8 items-start justify-center bg-gradient-to-b from-zinc-900 to-transparent pt-0.5 text-zinc-500 transition hover:text-zinc-300"
+                  aria-label="Scroll conversation up"
+                >
+                  <ChevronUp className="h-3.5 w-3.5 animate-pulse" />
+                </button>
+              )}
+
+              <div
+                ref={scrollRef}
+                className="scrollbar-hide h-full min-h-[260px] max-h-[min(56vh,760px)] space-y-3 overflow-y-auto pr-1"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {messages.map((msg, i) => (
+                  <MessageBubble key={i} message={msg} customerName={customer?.name} />
+                ))}
               </div>
-            )}
 
-            <div
-              ref={scrollRef}
-              className="space-y-2.5 max-h-[340px] overflow-y-auto scrollbar-hide pr-1"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {messages.map((msg, i) => (
-                <MessageBubble key={i} message={msg} customerName={customer?.name} />
-              ))}
+              {canScrollDown && (
+                <button
+                  type="button"
+                  onClick={() => scrollConversation("down")}
+                  className="absolute bottom-0 left-0 right-0 z-10 flex h-8 items-end justify-center bg-gradient-to-t from-zinc-900 to-transparent pb-0.5 text-zinc-500 transition hover:text-zinc-300"
+                  aria-label="Scroll conversation down"
+                >
+                  <ChevronDown className="h-3.5 w-3.5 animate-pulse" />
+                </button>
+              )}
             </div>
-
-            {canScrollDown && (
-              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-zinc-900 to-transparent z-10 pointer-events-none flex items-end justify-center pb-0.5">
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-500 animate-pulse" />
+          ) : (
+            (card.image_url || card.thumbnail_url) && (
+              <div className="rounded-xl overflow-hidden border border-zinc-700/30 mb-3">
+                <img
+                  src={card.image_url ?? card.thumbnail_url!}
+                  alt="Support context"
+                  className="w-full object-cover max-h-48"
+                />
               </div>
-            )}
-          </div>
-        ) : (
-          (card.image_url || card.thumbnail_url) && (
-            <div className="rounded-xl overflow-hidden border border-zinc-700/30 mb-3">
-              <img
-                src={card.image_url ?? card.thumbnail_url!}
-                alt="Support context"
-                className="w-full object-cover max-h-48"
-              />
-            </div>
-          )
-        )}
+            )
+          )}
 
-        {draftReply && (
-          <div className="bg-amber-500/[0.06] rounded-xl p-3.5 border border-amber-500/20 relative">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Bot className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] text-amber-400/80 font-semibold uppercase tracking-wider">
-                AI Draft — Review & Send
-              </span>
+          {draftReply && (
+            <div className="relative rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] p-4 lg:p-5">
+              <div className="mb-3 flex items-center gap-1.5">
+                <Bot className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] text-amber-400/80 font-semibold uppercase tracking-wider">
+                  AI Draft — Review & Send
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap text-[14px] leading-8 text-zinc-200 lg:text-[15px]">
+                {draftReply}
+              </p>
             </div>
-            <p className="text-[13px] text-zinc-200 leading-relaxed whitespace-pre-wrap">
-              {draftReply}
-            </p>
-          </div>
-        )}
+          )}
 
-        {hasThread && (
-          <div className="flex items-center justify-center gap-1 mt-2.5">
-            <span className="text-[10px] text-zinc-600">↑ ↓ scroll conversation</span>
-          </div>
-        )}
+          {hasThread && (
+            <div className="flex items-center justify-center gap-1 mt-2.5">
+              <span className="text-[10px] text-zinc-600">↑ ↓ scroll conversation</span>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

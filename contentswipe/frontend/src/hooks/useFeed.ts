@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { getSeededDemoCards } from "../lib/demo-feed";
+import type { FeedSourceMode } from "../lib/feed-source";
 import type {
   ContentItem,
+  ContentItemUpdate,
   ReviewStatus,
-  ContentType,
-  Persona,
   SwipeDirection,
   GenerationJob,
 } from "../types/database";
+import type { Persona } from "../lib/personas";
 
 interface SwipeAction {
   cardId: string;
@@ -15,6 +17,7 @@ interface SwipeAction {
   feedback?: string;
   previousStatus: ReviewStatus;
   timestamp: number;
+  cardSnapshot: ContentItem;
 }
 
 interface SessionStats {
@@ -39,12 +42,167 @@ interface UseFeedReturn {
   reload: () => Promise<void>;
 }
 
-export function useFeed(persona: Persona): UseFeedReturn {
-  const [cards, setCards] = useState<ContentItem[]>([]);
-  const [loading, setLoading] = useState(true);
+interface FeedCachePayload {
+  version: 1;
+  contentTypes: Persona["contentTypes"];
+  cards: ContentItem[];
+  updatedAt: string;
+}
+
+const FEED_CACHE_KEY_PREFIX = "contentswipe.feed.v1";
+const DEMO_FEED_CACHE_KEY_PREFIX = "contentswipe.demoFeed.v1";
+
+function insertSorted(cards: ContentItem[], nextCard: ContentItem): ContentItem[] {
+  const next = [...cards.filter((card) => card.id !== nextCard.id), nextCard];
+  next.sort(
+    (a, b) =>
+      new Date(a.created_at ?? 0).getTime() -
+      new Date(b.created_at ?? 0).getTime()
+  );
+  return next;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isContentItemLike(value: unknown): value is ContentItem {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.title === "string" &&
+    typeof value.content_type === "string" &&
+    typeof value.review_status === "string"
+  );
+}
+
+function getFeedCacheKey(persona: Persona): string {
+  return `${FEED_CACHE_KEY_PREFIX}.${persona.id}`;
+}
+
+function getDemoFeedCacheKey(persona: Persona): string {
+  return `${DEMO_FEED_CACHE_KEY_PREFIX}.${persona.id}`;
+}
+
+function getContentTypesSignature(contentTypes: Persona["contentTypes"]): string {
+  return [...contentTypes].sort().join("|");
+}
+
+function getPersonaCacheIdentity(persona: Persona): string {
+  return `${persona.id}:${getContentTypesSignature(persona.contentTypes)}`;
+}
+
+function readFeedCache(persona: Persona): ContentItem[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const storedValue = window.localStorage.getItem(getFeedCacheKey(persona));
+  if (!storedValue) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(storedValue) as FeedCachePayload;
+    if (!parsed || !Array.isArray(parsed.cards) || !Array.isArray(parsed.contentTypes)) {
+      return [];
+    }
+
+    const cachedSignature = getContentTypesSignature(parsed.contentTypes);
+    const liveSignature = getContentTypesSignature(persona.contentTypes);
+    if (cachedSignature !== liveSignature) {
+      return [];
+    }
+
+    return parsed.cards
+      .filter(isContentItemLike)
+      .sort(
+        (a, b) =>
+          new Date(a.created_at ?? 0).getTime() -
+          new Date(b.created_at ?? 0).getTime()
+      );
+  } catch {
+    return [];
+  }
+}
+
+function readDemoFeedCache(persona: Persona): ContentItem[] {
+  if (typeof window === "undefined") {
+    return getSeededDemoCards(persona);
+  }
+
+  const storedValue = window.localStorage.getItem(getDemoFeedCacheKey(persona));
+  if (!storedValue) {
+    return getSeededDemoCards(persona);
+  }
+
+  try {
+    const parsed = JSON.parse(storedValue) as FeedCachePayload;
+    if (!parsed || !Array.isArray(parsed.cards) || !Array.isArray(parsed.contentTypes)) {
+      return getSeededDemoCards(persona);
+    }
+
+    const cachedSignature = getContentTypesSignature(parsed.contentTypes);
+    const liveSignature = getContentTypesSignature(persona.contentTypes);
+    if (cachedSignature !== liveSignature) {
+      return getSeededDemoCards(persona);
+    }
+
+    return parsed.cards
+      .filter(isContentItemLike)
+      .sort(
+        (a, b) =>
+          new Date(a.created_at ?? 0).getTime() -
+          new Date(b.created_at ?? 0).getTime()
+      );
+  } catch {
+    return getSeededDemoCards(persona);
+  }
+}
+
+function writeFeedCache(persona: Persona, cards: ContentItem[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const payload: FeedCachePayload = {
+    version: 1,
+    contentTypes: [...persona.contentTypes],
+    cards,
+    updatedAt: new Date().toISOString(),
+  };
+
+  window.localStorage.setItem(getFeedCacheKey(persona), JSON.stringify(payload));
+}
+
+function writeDemoFeedCache(persona: Persona, cards: ContentItem[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const payload: FeedCachePayload = {
+    version: 1,
+    contentTypes: [...persona.contentTypes],
+    cards,
+    updatedAt: new Date().toISOString(),
+  };
+
+  window.localStorage.setItem(getDemoFeedCacheKey(persona), JSON.stringify(payload));
+}
+
+function getInitialCards(persona: Persona, sourceMode: FeedSourceMode): ContentItem[] {
+  return sourceMode === "demo" ? readDemoFeedCache(persona) : readFeedCache(persona);
+}
+
+export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedReturn {
+  const [cards, setCards] = useState<ContentItem[]>(() => getInitialCards(persona, sourceMode));
+  const [loading, setLoading] = useState(
+    () => sourceMode === "real" && getInitialCards(persona, sourceMode).length === 0
+  );
   const [error, setError] = useState<string | null>(null);
   const undoStack = useRef<SwipeAction[]>([]);
   const seenIds = useRef(new Set<string>());
+  const hydratedCacheIdentity = useRef(`${sourceMode}:${getPersonaCacheIdentity(persona)}`);
   const [stats, setStats] = useState<SessionStats>({
     totalSwiped: 0,
     approved: 0,
@@ -54,26 +212,32 @@ export function useFeed(persona: Persona): UseFeedReturn {
     undos: 0,
   });
 
-  const fetchCards = useCallback(async () => {
-    setLoading(true);
+  const fetchCards = useCallback(async (options?: { background?: boolean }) => {
+    if (sourceMode === "demo") {
+      const demoCards = readDemoFeedCache(persona);
+      setCards(demoCards);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    if (!options?.background) {
+      setLoading(true);
+    }
+
     setError(null);
     try {
-      const types = persona.contentTypes;
-      const results = await Promise.all(
-        types.map(async (ct) => {
-          const { data } = await supabase
-            .from("content_items")
-            .select("*")
-            .eq("review_status", "pending")
-            .eq("content_type", ct)
-            .order("created_at", { ascending: true })
-            .limit(20);
-          return (data ?? []) as ContentItem[];
-        })
-      );
+      const { data, error: queryError } = await supabase
+        .from("content_items")
+        .select("*")
+        .eq("review_status", "pending")
+        .in("content_type", persona.contentTypes)
+        .order("created_at", { ascending: true })
+        .limit(40);
 
-      const allCards = results
-        .flat()
+      if (queryError) throw queryError;
+
+      const allCards = (data ?? [])
         .filter((c) => !seenIds.current.has(c.id))
         .sort(
           (a, b) =>
@@ -90,16 +254,43 @@ export function useFeed(persona: Persona): UseFeedReturn {
     } finally {
       setLoading(false);
     }
-  }, [persona.contentTypes]);
+  }, [persona, sourceMode]);
 
   useEffect(() => {
+    const cachedCards =
+      sourceMode === "demo" ? readDemoFeedCache(persona) : readFeedCache(persona);
+
+    hydratedCacheIdentity.current = `${sourceMode}:${getPersonaCacheIdentity(persona)}`;
     seenIds.current.clear();
     undoStack.current = [];
+    setCards(cachedCards);
     setStats({ totalSwiped: 0, approved: 0, rejected: 0, variants: 0, ideas: 0, undos: 0 });
-    fetchCards();
-  }, [fetchCards]);
+    setLoading(sourceMode === "real" && cachedCards.length === 0);
+    setError(null);
+    if (sourceMode === "demo") {
+      return;
+    }
+    void fetchCards({ background: cachedCards.length > 0 });
+  }, [fetchCards, persona, sourceMode]);
 
   useEffect(() => {
+    if (hydratedCacheIdentity.current !== `${sourceMode}:${getPersonaCacheIdentity(persona)}`) {
+      return;
+    }
+
+    if (sourceMode === "demo") {
+      writeDemoFeedCache(persona, cards);
+      return;
+    }
+
+    writeFeedCache(persona, cards);
+  }, [cards, persona, sourceMode]);
+
+  useEffect(() => {
+    if (sourceMode === "demo") {
+      return;
+    }
+
     const channel = supabase
       .channel("feed_realtime")
       .on(
@@ -107,36 +298,42 @@ export function useFeed(persona: Persona): UseFeedReturn {
         { event: "*", schema: "public", table: "content_items" },
         (payload: any) => {
           const eventType = payload.eventType as string;
-          const newRow = payload.new as ContentItem;
+          const newRow = payload.new as ContentItem | undefined;
           const oldRow = payload.old as ContentItem | undefined;
+          const rowId = newRow?.id ?? oldRow?.id;
+          const matchesPersona = newRow
+            ? persona.contentTypes.includes(newRow.content_type)
+            : oldRow
+              ? persona.contentTypes.includes(oldRow.content_type)
+              : false;
+
+          if (!rowId) return;
 
           if (
             eventType === "INSERT" &&
+            newRow &&
             newRow.review_status === "pending" &&
-            persona.contentTypes.includes(newRow.content_type) &&
-            !seenIds.current.has(newRow.id)
+            matchesPersona &&
+            !seenIds.current.has(rowId)
           ) {
-            setCards((prev) => {
-              if (prev.some((c) => c.id === newRow.id)) return prev;
-              return [...prev, newRow];
-            });
-          }
-
-          if (eventType === "UPDATE" && newRow.review_status !== "pending") {
-            setCards((prev) => prev.filter((c) => c.id !== newRow.id));
+            setCards((prev) => insertSorted(prev, newRow));
           }
 
           if (
             eventType === "UPDATE" &&
-            oldRow?.review_status !== "pending" &&
+            newRow &&
             newRow.review_status === "pending" &&
-            persona.contentTypes.includes(newRow.content_type) &&
-            !seenIds.current.has(newRow.id)
+            matchesPersona
           ) {
-            setCards((prev) => {
-              if (prev.some((c) => c.id === newRow.id)) return prev;
-              return [...prev, newRow];
-            });
+            if (seenIds.current.has(rowId)) return;
+            setCards((prev) => insertSorted(prev, newRow));
+          }
+
+          if (
+            (eventType === "UPDATE" && newRow?.review_status !== "pending") ||
+            eventType === "DELETE"
+          ) {
+            setCards((prev) => prev.filter((card) => card.id !== rowId));
           }
         }
       )
@@ -145,54 +342,30 @@ export function useFeed(persona: Persona): UseFeedReturn {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [persona.contentTypes]);
+  }, [persona.contentTypes, sourceMode]);
 
   const swipe = useCallback(
     async (direction: SwipeDirection, feedback?: string) => {
-      setCards((prev) => {
-        const card = prev[0];
-        if (!card) return prev;
+      const card = cards[0];
+      if (!card) return;
 
-        seenIds.current.add(card.id);
+      setError(null);
+      seenIds.current.add(card.id);
+      setCards((prev) => prev.slice(1));
 
-        undoStack.current.push({
-          cardId: card.id,
-          direction,
-          feedback,
-          previousStatus: card.review_status,
-          timestamp: Date.now(),
-        });
+      const action: SwipeAction = {
+        cardId: card.id,
+        direction,
+        feedback,
+        previousStatus: card.review_status,
+        timestamp: Date.now(),
+        cardSnapshot: card,
+      };
 
-        if (undoStack.current.length > 50) undoStack.current.shift();
+      undoStack.current.push(action);
+      if (undoStack.current.length > 50) undoStack.current.shift();
 
-        const update: Record<string, any> = {
-          updated_at: new Date().toISOString(),
-        };
-
-        switch (direction) {
-          case "right":
-            update.review_status = "approved";
-            break;
-          case "left":
-            update.review_status = "rejected";
-            if (feedback) update.review_note = feedback;
-            break;
-          case "up":
-            update.review_status = "needs_edit";
-            update.review_note = feedback ?? "";
-            break;
-          case "down":
-            update.review_status = "needs_edit";
-            update.review_note = feedback ?? "";
-            break;
-        }
-
-        supabase
-          .from("content_items")
-          .update(update)
-          .eq("id", card.id)
-          .then();
-
+      if (sourceMode === "demo") {
         setStats((s) => ({
           ...s,
           totalSwiped: s.totalSwiped + 1,
@@ -201,16 +374,74 @@ export function useFeed(persona: Persona): UseFeedReturn {
           variants: s.variants + (direction === "up" ? 1 : 0),
           ideas: s.ideas + (direction === "down" ? 1 : 0),
         }));
+        return;
+      }
 
-        return prev.slice(1);
-      });
+      const update: ContentItemUpdate = {
+        updated_at: new Date().toISOString(),
+        reviewed_at: new Date().toISOString(),
+      };
+
+      switch (direction) {
+        case "right":
+          update.review_status = "approved";
+          update.review_note = null;
+          break;
+        case "left":
+          update.review_status = "rejected";
+          update.review_note = feedback ?? null;
+          break;
+        case "up":
+        case "down":
+          update.review_status = "needs_edit";
+          update.review_note = feedback ?? "";
+          break;
+      }
+
+      const { error: updateError } = await supabase
+        .from("content_items")
+        .update(update)
+        .eq("id", card.id);
+
+      if (updateError) {
+        seenIds.current.delete(card.id);
+        undoStack.current = undoStack.current.filter(
+          (entry) => entry.timestamp !== action.timestamp
+        );
+        setCards((prev) => [card, ...prev]);
+        setError(updateError.message ?? "Failed to save review action");
+        return;
+      }
+
+      setStats((s) => ({
+        ...s,
+        totalSwiped: s.totalSwiped + 1,
+        approved: s.approved + (direction === "right" ? 1 : 0),
+        rejected: s.rejected + (direction === "left" ? 1 : 0),
+        variants: s.variants + (direction === "up" ? 1 : 0),
+        ideas: s.ideas + (direction === "down" ? 1 : 0),
+      }));
     },
-    []
+    [cards, sourceMode]
   );
 
   const undo = useCallback(async () => {
     const lastAction = undoStack.current.pop();
     if (!lastAction) return;
+
+    if (sourceMode === "demo") {
+      setCards((prev) => insertSorted(prev, lastAction.cardSnapshot));
+      setStats((s) => ({
+        ...s,
+        totalSwiped: Math.max(0, s.totalSwiped - 1),
+        undos: s.undos + 1,
+        approved: s.approved - (lastAction.direction === "right" ? 1 : 0),
+        rejected: s.rejected - (lastAction.direction === "left" ? 1 : 0),
+        variants: s.variants - (lastAction.direction === "up" ? 1 : 0),
+        ideas: s.ideas - (lastAction.direction === "down" ? 1 : 0),
+      }));
+      return;
+    }
 
     try {
       const { data } = await supabase
@@ -227,7 +458,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
       if (data) {
         const restored = data as ContentItem;
         seenIds.current.delete(lastAction.cardId);
-        setCards((prev) => [restored, ...prev]);
+        setCards((prev) => insertSorted(prev, restored));
         setStats((s) => ({
           ...s,
           totalSwiped: Math.max(0, s.totalSwiped - 1),
@@ -249,7 +480,7 @@ export function useFeed(persona: Persona): UseFeedReturn {
     } catch {
       setError("Failed to undo");
     }
-  }, []);
+  }, [sourceMode]);
 
   return {
     cards,

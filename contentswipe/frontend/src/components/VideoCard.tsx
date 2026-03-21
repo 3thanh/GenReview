@@ -5,7 +5,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Play, Pause, Film } from "lucide-react";
+import { Play, Pause, Film, Volume2, VolumeX } from "lucide-react";
 import type { ContentItem } from "../types/database";
 
 export interface VideoCardHandle {
@@ -30,6 +30,8 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const videoRef = useRef<HTMLVideoElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
+    const [muted, setMuted] = useState(true);
+    const [volume, setVolume] = useState(0.8);
 
     useImperativeHandle(ref, () => ({
       getCurrentTime: () => videoRef.current?.currentTime ?? 0,
@@ -54,6 +56,32 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       };
     }, []);
 
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      video.muted = muted;
+      video.volume = volume;
+    }, [muted, volume]);
+
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video || !card.video_url) return;
+
+      if (isPlaying) {
+        void video.play().catch(() => {});
+        return;
+      }
+
+      video.pause();
+    }, [card.video_url, isPlaying]);
+
+    useEffect(() => {
+      setCurrentTime(0);
+      setDuration(0);
+      setMuted(true);
+    }, [card.id]);
+
     const handleToggle = () => {
       if (videoRef.current) {
         if (isPlaying) {
@@ -63,6 +91,13 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         }
       }
       onTogglePlay();
+    };
+
+    const handleVolumeChange = (nextVolume: number) => {
+      setVolume(nextVolume);
+      if (nextVolume > 0 && muted) {
+        setMuted(false);
+      }
     };
 
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -93,6 +128,31 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                 )}
               </div>
             </button>
+
+            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={() => setMuted((current) => !current)}
+                className="text-zinc-100 transition-colors hover:text-white"
+                aria-label={muted ? "Unmute video" : "Mute video"}
+              >
+                {muted ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={muted ? 0 : volume}
+                onChange={(event) => handleVolumeChange(Number(event.target.value))}
+                className="h-1.5 w-20 accent-white"
+                aria-label="Video volume"
+              />
+            </div>
 
             {/* Paused timestamp overlay */}
             {!isPlaying && duration > 0 && (

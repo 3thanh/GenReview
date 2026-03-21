@@ -1,5 +1,5 @@
 import { Inbox, Sparkles } from "lucide-react";
-import type { Persona } from "../types/database";
+import type { Persona } from "../lib/personas";
 
 interface EmptyStateProps {
   persona: Persona;

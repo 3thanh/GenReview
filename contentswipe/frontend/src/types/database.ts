@@ -8,6 +8,7 @@ export type Json =
 
 export type ContentType = "video" | "social" | "support";
 export type ReviewStatus = "pending" | "approved" | "rejected" | "needs_edit";
+export type SwipeDirection = "right" | "left" | "up" | "down";
 
 export interface ContentItem {
   id: string;
@@ -43,6 +44,42 @@ export interface ContentItem {
   updated_at: string | null;
 }
 
+export interface ContentItemInsert {
+  id?: string;
+  business_id?: string | null;
+  session_id?: string | null;
+  content_type?: ContentType;
+  channel?: string | null;
+  review_mode?: string | null;
+  source_type?: string | null;
+  title: string;
+  body_text?: string | null;
+  script?: string | null;
+  image_url?: string | null;
+  video_url?: string | null;
+  thumbnail_url?: string | null;
+  source_ref?: string | null;
+  source_bundle?: Json | null;
+  prompt_input_summary?: string | null;
+  review_status?: ReviewStatus;
+  review_note?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  starred?: boolean;
+  down_arrow_designation?: string | null;
+  generation_job_id?: string | null;
+  generation_status?: string | null;
+  model_name?: string | null;
+  prompt_template_id?: string | null;
+  parent_id?: string | null;
+  variant_of?: string | null;
+  metadata?: Json | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export type ContentItemUpdate = Partial<ContentItemInsert>;
+
 export interface GenerationJob {
   id: string;
   content_item_id: string | null;
@@ -55,6 +92,20 @@ export interface GenerationJob {
   completed_at: string | null;
 }
 
+export interface GenerationJobInsert {
+  id?: string;
+  content_item_id?: string | null;
+  source_card_id?: string | null;
+  job_type: string;
+  prompt: string;
+  status?: string;
+  error_message?: string | null;
+  created_at?: string | null;
+  completed_at?: string | null;
+}
+
+export type GenerationJobUpdate = Partial<GenerationJobInsert>;
+
 export interface Business {
   id: string;
   name: string;
@@ -63,85 +114,80 @@ export interface Business {
   created_at: string | null;
 }
 
-export type SwipeDirection = "right" | "left" | "up" | "down";
+export interface BusinessInsert {
+  id?: string;
+  name: string;
+  description?: string | null;
+  website_url?: string | null;
+  created_at?: string | null;
+}
 
-export interface SwipeLabel {
+export type BusinessUpdate = Partial<BusinessInsert>;
+
+export interface Session {
+  id: string;
+  business_id: string;
+  name: string;
+  created_at: string | null;
+}
+
+export interface SessionInsert {
+  id?: string;
+  business_id: string;
+  name: string;
+  created_at?: string | null;
+}
+
+export type SessionUpdate = Partial<SessionInsert>;
+
+export interface ReviewAction {
   action: string;
   shortcut: string;
   color: string;
   requiresFeedback: boolean;
 }
 
-export interface Persona {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  contentTypes: ContentType[];
-  swipeLabels: Record<SwipeDirection, SwipeLabel>;
-  emptyStateMessage: string;
-  emptyStateCta: string;
-}
+export const REVIEW_ACTIONS: Record<SwipeDirection, ReviewAction> = {
+  right: { action: "Approve", shortcut: "→", color: "#22c55e", requiresFeedback: false },
+  left: { action: "Reject", shortcut: "←", color: "#ef4444", requiresFeedback: true },
+  up: { action: "Request Variant", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
+  down: { action: "More Ideas", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
+};
 
-export const PERSONAS: Persona[] = [
-  {
-    id: "all",
-    name: "Everything",
-    description: "All content types in a single feed",
-    icon: "layers",
-    contentTypes: ["video", "social", "support"],
-    swipeLabels: {
-      right: { action: "Approve", shortcut: "→", color: "#22c55e", requiresFeedback: false },
-      left: { action: "Reject", shortcut: "←", color: "#ef4444", requiresFeedback: true },
-      up: { action: "Request Variant", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
-      down: { action: "More Ideas", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
-    },
-    emptyStateMessage: "Nothing to review right now",
-    emptyStateCta: "Create something new",
-  },
-  {
-    id: "content-creator",
-    name: "Content Creator",
-    description: "Review AI-generated video scripts and social posts",
-    icon: "video",
-    contentTypes: ["video", "social"],
-    swipeLabels: {
-      right: { action: "Approve", shortcut: "→", color: "#22c55e", requiresFeedback: false },
-      left: { action: "Reject", shortcut: "←", color: "#ef4444", requiresFeedback: true },
-      up: { action: "Request Variant", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
-      down: { action: "More Ideas", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
-    },
-    emptyStateMessage: "No content to review",
-    emptyStateCta: "Create your first video",
-  },
-  {
-    id: "support-agent",
-    name: "Support Agent",
-    description: "Triage and respond to support tickets",
-    icon: "headset",
-    contentTypes: ["support"],
-    swipeLabels: {
-      right: { action: "Send Reply", shortcut: "→", color: "#22c55e", requiresFeedback: false },
-      left: { action: "Discard", shortcut: "←", color: "#ef4444", requiresFeedback: true },
-      up: { action: "Escalate", shortcut: "↑", color: "#f59e0b", requiresFeedback: true },
-      down: { action: "Use Template", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
-    },
-    emptyStateMessage: "Inbox zero — no tickets to review",
-    emptyStateCta: "Check back later",
-  },
-  {
-    id: "social-manager",
-    name: "Social Manager",
-    description: "Review and schedule LinkedIn posts",
-    icon: "share",
-    contentTypes: ["social"],
-    swipeLabels: {
-      right: { action: "Schedule", shortcut: "→", color: "#22c55e", requiresFeedback: false },
-      left: { action: "Skip", shortcut: "←", color: "#ef4444", requiresFeedback: false },
-      up: { action: "Edit & Rewrite", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
-      down: { action: "Generate Alternatives", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
-    },
-    emptyStateMessage: "No posts to review",
-    emptyStateCta: "Draft a new post",
-  },
-];
+export interface Database {
+  public: {
+    Tables: {
+      businesses: {
+        Row: Business;
+        Insert: BusinessInsert;
+        Update: BusinessUpdate;
+        Relationships: [];
+      };
+      sessions: {
+        Row: Session;
+        Insert: SessionInsert;
+        Update: SessionUpdate;
+        Relationships: [];
+      };
+      content_items: {
+        Row: ContentItem;
+        Insert: ContentItemInsert;
+        Update: ContentItemUpdate;
+        Relationships: [];
+      };
+      generation_jobs: {
+        Row: GenerationJob;
+        Insert: GenerationJobInsert;
+        Update: GenerationJobUpdate;
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: {
+      content_type: ContentType;
+      review_status: ReviewStatus;
+    };
+    CompositeTypes: Record<string, never>;
+  };
+}

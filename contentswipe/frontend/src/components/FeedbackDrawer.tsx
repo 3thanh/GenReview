@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Send, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { SwipeDirection, Persona } from "../types/database";
+import type { SwipeDirection } from "../types/database";
+import type { Persona } from "../lib/personas";
 
 interface FeedbackDrawerProps {
   open: boolean;

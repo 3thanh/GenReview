@@ -5,7 +5,8 @@ import {
   ArrowDownCircle,
   Undo2,
 } from "lucide-react";
-import type { Persona, SwipeDirection } from "../types/database";
+import type { SwipeDirection } from "../types/database";
+import type { Persona } from "../lib/personas";
 
 interface ActionBarProps {
   persona: Persona;
@@ -13,7 +14,6 @@ interface ActionBarProps {
   onUndo: () => void;
   canUndo: boolean;
   disabled: boolean;
-  isSupportCard?: boolean;
 }
 
 const DIRECTION_ICONS: Record<SwipeDirection, typeof CheckCircle2> = {
@@ -29,70 +29,7 @@ export function ActionBar({
   onUndo,
   canUndo,
   disabled,
-  isSupportCard = false,
 }: ActionBarProps) {
-  if (isSupportCard) {
-    const downLabel = persona.swipeLabels.down;
-    return (
-      <div className="flex items-center justify-center gap-3 py-4 px-6">
-        {/* Undo */}
-        <button
-          onClick={onUndo}
-          disabled={!canUndo || disabled}
-          className="w-10 h-10 rounded-full bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          title="Undo (⌘Z)"
-        >
-          <Undo2 className="w-4 h-4" />
-        </button>
-
-        {/* Reject */}
-        <button
-          onClick={() => onSwipe("left")}
-          disabled={disabled}
-          className="w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{
-            borderColor: persona.swipeLabels.left.color + "60",
-            color: persona.swipeLabels.left.color,
-            backgroundColor: persona.swipeLabels.left.color + "10",
-          }}
-          title={`${persona.swipeLabels.left.action} (←)`}
-        >
-          <XCircle className="w-6 h-6" />
-        </button>
-
-        {/* Send for Review */}
-        <button
-          onClick={() => onSwipe("down")}
-          disabled={disabled}
-          className="w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{
-            borderColor: downLabel.color + "60",
-            color: downLabel.color,
-            backgroundColor: downLabel.color + "10",
-          }}
-          title={`${downLabel.action} (↓)`}
-        >
-          <ArrowDownCircle className="w-5 h-5" />
-        </button>
-
-        {/* Approve */}
-        <button
-          onClick={() => onSwipe("right")}
-          disabled={disabled}
-          className="w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{
-            borderColor: persona.swipeLabels.right.color + "60",
-            color: persona.swipeLabels.right.color,
-            backgroundColor: persona.swipeLabels.right.color + "10",
-          }}
-          title={`${persona.swipeLabels.right.action} (→)`}
-        >
-          <CheckCircle2 className="w-6 h-6" />
-        </button>
-      </div>
-    );
-  }
-
   const directions: SwipeDirection[] = ["left", "down", "up", "right"];
 
   return (

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { supabase } from "../lib/supabase.js";
+import type { ContentItemInsert } from "../types/database.js";
 
 async function getOrCreateBusiness() {
   const { data: existing } = await supabase
@@ -23,7 +24,7 @@ async function seedSupportThreads() {
   const businessId = await getOrCreateBusiness();
   console.log("Using business:", businessId);
 
-  const items = [
+  const items: ContentItemInsert[] = [
     {
       title: "Workflow automation not triggering for new contacts",
       body_text:
