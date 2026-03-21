@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Film, Share2, Headphones, Linkedin, AtSign } from "lucide-react";
 import { useFeed } from "../hooks/useFeed";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { ContentCard } from "./ContentCard";
@@ -49,6 +49,32 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+const TYPE_CONFIG = {
+  video: {
+    Icon: Film,
+    label: "Video",
+    badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    accentGradient: "from-purple-500/10 via-transparent to-indigo-500/10",
+  },
+  social: {
+    Icon: Share2,
+    label: "Social",
+    badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    accentGradient: "from-blue-500/10 via-transparent to-cyan-500/10",
+  },
+  support: {
+    Icon: Headphones,
+    label: "Support",
+    badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+    accentGradient: "from-amber-500/10 via-transparent to-orange-500/10",
+  },
+} as const;
+
+const CHANNEL_ICON_MAP: Record<string, typeof Linkedin> = {
+  linkedin: Linkedin,
+  twitter: AtSign,
+};
+
 function FeedPreviewSlice({
   card,
   side,
@@ -57,42 +83,66 @@ function FeedPreviewSlice({
   side: "left" | "right";
 }) {
   const previewImage = card.image_url ?? card.thumbnail_url ?? null;
-  const alignClass = side === "left" ? "items-end pr-2" : "items-start pl-2";
-  const textAlignClass = side === "left" ? "text-right" : "text-left";
-  const cropClass = side === "left" ? "bg-[82%_center]" : "bg-[18%_center]";
-  const overlayClass =
-    side === "left"
-      ? "bg-gradient-to-r from-white/95 via-white/70 to-transparent"
-      : "bg-gradient-to-l from-white/95 via-white/70 to-transparent";
-
-  const palette = {
-    video: "from-sky-100 via-white to-indigo-50",
-    social: "from-cyan-100 via-white to-blue-50",
-    support: "from-amber-50 via-white to-orange-50",
-  }[card.content_type];
+  const config = TYPE_CONFIG[card.content_type];
+  const TypeIcon = config.Icon;
+  const roundClass =
+    side === "left" ? "rounded-l-[28px] rounded-r-2xl" : "rounded-r-[28px] rounded-l-2xl";
+  const ChannelIcon = card.channel ? CHANNEL_ICON_MAP[card.channel] ?? Share2 : null;
 
   return (
     <div
       aria-hidden="true"
-      className={`surface-panel hidden h-full w-[82px] shrink-0 overflow-hidden rounded-[32px] lg:flex xl:w-[98px] ${alignClass}`}
+      className={`hidden h-full w-[120px] shrink-0 lg:flex xl:w-[148px] ${roundClass} overflow-hidden border border-zinc-800/80 bg-zinc-900 shadow-xl shadow-black/30`}
     >
-      <div className="relative h-full w-full overflow-hidden rounded-[28px]">
+      <div className="relative flex h-full w-full flex-col">
+        {/* Image/thumbnail preview */}
         {previewImage ? (
-          <div
-            className={`absolute inset-0 bg-cover bg-center ${cropClass}`}
-            style={{ backgroundImage: `url(${previewImage})` }}
-          />
+          <div className="relative h-[45%] w-full shrink-0 overflow-hidden">
+            <img
+              src={previewImage}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-zinc-900" />
+          </div>
         ) : (
-          <div className={`absolute inset-0 bg-gradient-to-b ${palette}`} />
+          <div className={`relative flex h-[45%] w-full shrink-0 items-center justify-center bg-gradient-to-br ${config.accentGradient}`}>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
+              <TypeIcon className="h-5 w-5 text-zinc-500" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-900" />
+          </div>
         )}
-        <div className={`absolute inset-0 ${overlayClass}`} />
-        <div className={`absolute inset-x-0 bottom-0 p-4 ${textAlignClass}`}>
-          <p className="text-[10px] uppercase tracking-[0.24em] text-slate-400">
-            {card.content_type}
-          </p>
-          <p className="mt-2 line-clamp-4 text-sm font-semibold leading-tight text-slate-700/90 [writing-mode:vertical-rl] [text-orientation:mixed]">
-            {card.title}
-          </p>
+
+        {/* Content info */}
+        <div className="flex flex-1 flex-col justify-between p-3">
+          <div>
+            <div className="mb-2 flex items-center gap-1.5">
+              <span
+                className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${config.badgeColor}`}
+              >
+                {config.label}
+              </span>
+              {ChannelIcon && (
+                <ChannelIcon className="h-3 w-3 text-zinc-600" />
+              )}
+            </div>
+            <p className="line-clamp-3 text-xs font-semibold leading-snug text-zinc-300">
+              {card.title}
+            </p>
+            {card.body_text && (
+              <p className="mt-1.5 line-clamp-2 text-[10px] leading-relaxed text-zinc-500">
+                {card.body_text}
+              </p>
+            )}
+          </div>
+
+          {/* Skeleton shimmer lines at bottom for visual richness */}
+          <div className="mt-auto space-y-1.5 pt-3">
+            <div className="h-1 w-full rounded-full bg-zinc-800" />
+            <div className="h-1 w-3/4 rounded-full bg-zinc-800" />
+            <div className="h-1 w-1/2 rounded-full bg-zinc-800" />
+          </div>
         </div>
       </div>
     </div>
@@ -299,7 +349,7 @@ export function SwipeFeed({
         {!currentCard && !loading ? (
           <EmptyState persona={persona} onNavigateToStudio={onNavigateToStudio} />
         ) : (
-          <div className="surface-panel flex h-full w-full max-w-[min(98vw,1680px)] items-center justify-center gap-3 overflow-hidden rounded-[36px] p-3 sm:p-4 xl:gap-5 xl:p-5">
+          <div className="surface-panel flex h-full w-full max-w-[min(98vw,1680px)] items-center justify-center gap-0 overflow-hidden rounded-[36px] p-3 sm:p-4 xl:p-5">
             {leftPreviewCard && <FeedPreviewSlice card={leftPreviewCard} side="left" />}
 
             <AnimatePresence mode="popLayout" custom={exitDirection}>
@@ -312,7 +362,7 @@ export function SwipeFeed({
                   animate="center"
                   exit="exit"
                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                  className="flex h-full min-w-0 flex-1 items-stretch justify-center"
+                  className="flex h-full min-w-0 flex-1 items-stretch justify-center px-1.5"
                 >
                   <ContentCard
                     ref={supportCardRef}
