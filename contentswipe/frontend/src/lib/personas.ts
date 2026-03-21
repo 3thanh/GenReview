@@ -62,6 +62,42 @@ export const PERSONAS: Persona[] = [
     emptyStateCta: "Create your first video",
   },
   {
+    id: "airplane-ai",
+    name: "Airplane AI",
+    description:
+      "AI models as passengers on a crashing plane — stylized 3D comedy reels where each model reacts in-character. GPT-4 narrates the exit procedure, Claude gives away its parachute, Llama already jumped, Grok live-tweets the crash, Gemini writes his own eulogy.",
+    icon: "video",
+    contentTypes: ["video"],
+    swipeLabels: {
+      right: {
+        action: "Ship It",
+        shortcut: "→",
+        color: "#22c55e",
+        requiresFeedback: false,
+      },
+      left: {
+        action: "Not Funny",
+        shortcut: "←",
+        color: "#ef4444",
+        requiresFeedback: true,
+      },
+      up: {
+        action: "New Character Take",
+        shortcut: "↑",
+        color: "#a855f7",
+        requiresFeedback: true,
+      },
+      down: {
+        action: "Star / Save",
+        shortcut: "↓",
+        color: "#f59e0b",
+        requiresFeedback: false,
+      },
+    },
+    emptyStateMessage: "No airplane reels to review",
+    emptyStateCta: "Generate an AI airplane comedy reel",
+  },
+  {
     id: "all",
     name: "Everything",
     description: "All video content in a single feed",
