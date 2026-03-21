@@ -25,7 +25,7 @@ body{
 /* ─── Top bar ─── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:16px 24px;z-index:10;
+  padding:12px 24px;z-index:10;
 }
 .logo{
   font-family:'Space Mono',monospace;font-weight:700;font-size:18px;
@@ -62,10 +62,15 @@ body{
 /* ─── Card area ─── */
 .card-stage{
   flex:1;display:flex;align-items:center;justify-content:center;
-  position:relative;perspective:1200px;padding:0 24px;
+  position:relative;perspective:1200px;padding:0 20px;
   overflow:hidden;
 }
-.card-stack{position:relative;width:420px;max-width:100%;aspect-ratio:9/14}
+.card-stack{
+  position:relative;
+  height:100%;max-height:100%;
+  aspect-ratio:9/15;
+  max-width:min(520px, 100%);
+}
 
 .card{
   position:absolute;inset:0;border-radius:var(--radius);
@@ -86,7 +91,7 @@ body{
 .card.swipe-down{transform:translateY(150%) scale(.8);opacity:0}
 
 .card-visual{
-  height:45%;background:linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95);
+  height:38%;background:linear-gradient(135deg,#1e1b4b,#312e81,#4c1d95);
   position:relative;overflow:hidden;
 }
 .card-visual::after{
@@ -245,13 +250,13 @@ body{
 /* ─── Action bar ─── */
 .action-bar{
   display:flex;justify-content:center;gap:12px;
-  padding:16px 24px 28px;z-index:10;
+  padding:10px 24px 20px;z-index:10;
 }
 .action-btn{
-  width:56px;height:56px;border-radius:50%;border:2px solid;
+  width:52px;height:52px;border-radius:50%;border:2px solid;
   background:transparent;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  transition:all .15s;font-size:22px;position:relative;
+  transition:all .15s;font-size:20px;position:relative;
 }
 .action-btn:hover{transform:scale(1.15)}
 .action-btn:active{transform:scale(.95)}
@@ -339,7 +344,7 @@ body{
 
 /* ─── Keyboard hints ─── */
 .kbd-hints{
-  position:fixed;bottom:100px;right:24px;
+  position:fixed;bottom:88px;right:24px;
   display:flex;flex-direction:column;gap:4px;
   font-size:11px;color:var(--dim);z-index:10;
 }
