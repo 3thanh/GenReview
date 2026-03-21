@@ -28,72 +28,72 @@ interface Scene {
 }
 
 const STYLE =
-  "high-quality cinematic CGI render, stylized 3D character with slightly exaggerated proportions, cozy warm color grading, soft volumetric lighting, lo-fi aesthetic, 9:16 vertical composition";
+  "realistic editorial photography, shallow depth of field, natural lighting, candid moment, 35mm film grain, muted tones, 9:16 vertical composition";
 
 const SCENES: Scene[] = [
   {
     id: "intro",
     narration: "Hi, this is a day in the life of a vibe coder.",
-    imagePrompt: `A stylized 3D character sitting in a cozy home office at dawn, messy desk with multiple monitors showing colorful code, coffee mug, plants on windowsill, soft morning light streaming in, title card energy, ${STYLE}`,
+    imagePrompt: `A cozy home office desk at dawn with two monitors showing lines of code, a steaming coffee mug, scattered sticky notes, a mechanical keyboard, houseplants on the windowsill, warm golden morning light through blinds, ${STYLE}`,
   },
   {
     id: "morning_check",
     narration:
       "At 9:30 AM, I wake up and check if anything broke overnight. It did.",
-    imagePrompt: `A stylized 3D character in pajamas and messy hair sitting up in bed squinting at a phone screen showing red error notifications, bedroom lit by phone glow, alarm clock showing 9:30, sleepy disappointed expression, ${STYLE}`,
+    imagePrompt: `A phone screen glowing in a dim bedroom showing error alert notifications, rumpled bedsheets, alarm clock reading 9:30 on a nightstand, soft blue phone glow illuminating the scene, ${STYLE}`,
   },
   {
     id: "understanding",
     narration:
       "I open my laptop and spend some time trying to understand what I built yesterday. It feels intentional.",
-    imagePrompt: `A stylized 3D character at a desk staring at a laptop screen full of dense code with a confused but impressed expression, one hand on chin, the other holding coffee, sticky notes everywhere, morning light, ${STYLE}`,
+    imagePrompt: `Close-up of a laptop screen displaying dense code in a dark editor theme, a hand resting on chin in thought, coffee cup beside the trackpad, colorful sticky notes on the monitor edge, soft morning window light, ${STYLE}`,
   },
   {
     id: "new_feature",
     narration:
       "At 11:00 AM, I start working on a new feature by describing what I want and hoping for the best.",
-    imagePrompt: `A stylized 3D character typing a long natural language prompt into a glowing chat interface on screen, fingers crossed on the other hand under the desk, hopeful optimistic expression, bright midday light, ${STYLE}`,
+    imagePrompt: `Hands typing on a laptop keyboard, the screen showing a chat interface with a long text prompt, bright midday light from a nearby window, a notebook with scribbled diagrams beside the laptop, ${STYLE}`,
   },
   {
     id: "breaks",
     narration:
       "Eventually something breaks, so I just kind of sit with it until it becomes a different problem.",
-    imagePrompt: `A stylized 3D character leaning back in an office chair staring at a screen full of red error messages and stack traces, zen-like calm expression, arms crossed, the monitor reflecting red on their face, ${STYLE}`,
+    imagePrompt: `A laptop screen showing red error messages and terminal output, an empty office chair slightly pushed back, a half-drunk coffee cup, the monitor casting a faint red glow on the desk surface, ${STYLE}`,
   },
   {
     id: "lunch",
     narration:
       "At 2:00 PM, I take a long lunch break to reset mentally and also give the code some space.",
-    imagePrompt: `A stylized 3D character eating a sandwich on a park bench outside, laptop closed beside them, birds nearby, warm afternoon sunlight, peaceful relaxed expression, the laptop has a sticker that says AI on it, ${STYLE}`,
+    imagePrompt: `A park bench in warm afternoon sunlight with a closed laptop bag beside a takeout container, trees with dappled light, a quiet urban park setting, peaceful and relaxed atmosphere, ${STYLE}`,
   },
   {
     id: "working_again",
     narration: "I come back and it's working again, which I take as a win.",
-    imagePrompt: `A stylized 3D character walking back to their desk seeing a green success terminal output on screen, surprised delighted expression, arms slightly raised in quiet celebration, warm golden afternoon light, ${STYLE}`,
+    imagePrompt: `A laptop screen showing green terminal output with success messages, warm golden afternoon light streaming across a wooden desk, a fresh cup of coffee next to the laptop, ${STYLE}`,
   },
   {
     id: "batch_run",
     narration:
       "At 4:30 PM, I run a batch, don't touch anything, and just let it happen.",
-    imagePrompt: `A stylized 3D character sitting perfectly still with hands deliberately away from the keyboard, watching a progress bar slowly fill on screen, intense focused expression, do not touch energy, late afternoon amber light, ${STYLE}`,
+    imagePrompt: `A laptop screen with a progress bar loading, hands deliberately placed flat on the desk away from the keyboard, late afternoon amber light casting long shadows, tense stillness, ${STYLE}`,
   },
   {
     id: "explaining",
     narration:
       "Someone asks how it works, and I walk them through the overall vision.",
-    imagePrompt: `A stylized 3D character standing at a whiteboard covered in vague arrows and circles and the word PIPELINE with a question mark, gesturing confidently to a confused colleague, presentation energy, ${STYLE}`,
+    imagePrompt: `A whiteboard covered in rough arrows, boxes, and the word PIPELINE with a question mark, dry-erase markers on the ledge, an office meeting room with soft overhead lighting, ${STYLE}`,
   },
   {
     id: "one_small_change",
     narration:
       "Before logging off, I make one small change that breaks everything immediately.",
-    imagePrompt: `A stylized 3D character pressing a single key on a keyboard, screen behind them erupting in cascading red errors and warning popups, shocked wide-eyed expression, dramatic red lighting from the screen, ${STYLE}`,
+    imagePrompt: `Close-up of a finger pressing a single key on a mechanical keyboard, a monitor in the background showing cascading red error popups, dramatic red glow from the screen in a dim room, ${STYLE}`,
   },
   {
     id: "close",
     narration:
       "I close my laptop and trust that tomorrow I'll understand it.",
-    imagePrompt: `A stylized 3D character gently closing a laptop lid in a dark room, peaceful accepting expression, soft blue moonlight from a window, the laptop has a faint warm glow seeping from the edges as it closes, serene ending mood, ${STYLE}`,
+    imagePrompt: `A laptop half-closed on a desk in a dark room, soft blue moonlight from a window, the screen casting a faint warm glow from the closing gap, a serene and quiet nighttime atmosphere, ${STYLE}`,
   },
 ];
 

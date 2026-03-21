@@ -62,7 +62,7 @@ const DEMO_CARDS: ContentItem[] = [
     source_type: "brief",
     title: "Day in the Life of a Vibe Coder",
     body_text:
-      "Stylized 3D slideshow reel — a day following a vibe coder from morning standup to midnight deploy.",
+      "Realistic photo slideshow reel — a day following a vibe coder from morning standup to midnight deploy.",
     script:
       "Morning: Check Slack, mass-mark as read. Open VS Code, stare at a function named 'doStuff'.\nUnderstanding: Read the same 4 lines of code for 20 minutes. Mass-highlight, delete, rewrite identically.\nNew feature: Ship it to prod. It works. No tests. No idea why.\nLunch: Ramen. Still thinking about that one variable name.\nAfternoon: A batch job runs. Hands off keyboard. Don't touch anything.\nExplaining: At the whiteboard. Vague arrows. 'It's like a pipeline but not really.'\nOne small change: Press one key. Everything breaks. Everything also fixes itself.\nClose: Laptop gently closes. Tomorrow we vibe again.",
     image_url: null,
