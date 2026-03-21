@@ -23,6 +23,7 @@ HEADSHOT = os.path.join(BASE, "source_assets", "yash_headshot_01.png")
 
 API_KEY = "259f6398060a96b007b14353f067710999fef2dadb9609e071bd008a7adecdda"
 VOICE_ID = "G2pIdqup6MlQFH2bibG4"
+TALKING_HEAD = os.path.join(BASE, "source_assets", "yash_talking_head_60s.mp4")
 W, H = 1280, 720
 
 SCRIPTS = {
@@ -120,23 +121,15 @@ def render_frame(path, caption=None, subcaption=None, stat=None, bg="black"):
     img.save(path)
 
 
-def render_headshot_frame(path, stat=None):
-    """Create a 1280x720 frame with Yash's headshot centered on dark bg."""
-    bg = Image.new("RGB", (W, H), (15, 15, 15))
-    head = Image.open(HEADSHOT)
-    head = head.resize((500, 500), Image.LANCZOS)
-    x = (W - 500) // 2
-    y = (H - 500) // 2 - 20
-    bg.paste(head, (x, y))
-
-    if stat:
-        draw = ImageDraw.Draw(bg)
-        f = find_font(28)
-        bb = draw.textbbox((0, 0), stat, font=f)
-        tw = bb[2] - bb[0]
-        draw.rectangle([(0, H - 60), (W, H)], fill=(0, 0, 0, 180))
-        draw.text(((W - tw) // 2, H - 50), stat, fill="white", font=f)
-    bg.save(path)
+def render_stat_bar(path, stat_text):
+    """Render a semi-transparent stat bar overlay (1280x60 RGBA)."""
+    img = Image.new("RGBA", (W, 60), (0, 0, 0, 180))
+    draw = ImageDraw.Draw(img)
+    f = find_font(28)
+    bb = draw.textbbox((0, 0), stat_text, font=f)
+    tw = bb[2] - bb[0]
+    draw.text(((W - tw) // 2, 12), stat_text, fill="white", font=f)
+    img.save(path)
 
 
 def tts(text, out_path):
@@ -148,9 +141,9 @@ def tts(text, out_path):
             "text": text,
             "model_id": "eleven_multilingual_v2",
             "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.85,
-                "style": 0.4,
+                "stability": 0.75,
+                "similarity_boost": 0.80,
+                "style": 0.25,
                 "use_speaker_boost": True,
             },
         },
@@ -199,6 +192,7 @@ def build_script(name, config):
 
     # Step 2: Build video segments — duration matches audio exactly
     print("\n  --- Video segments ---")
+    head_offset = 2  # skip first 2s of source clip
     for seg in segments:
         i = seg["id"]
         dur = seg["actual_dur"]
@@ -206,21 +200,39 @@ def build_script(name, config):
         vid = os.path.join(work, f"video_{i}.mp4")
 
         if seg["type"] == "head":
-            print(f"    Seg {i}: headshot ({dur:.2f}s)")
-            frame = os.path.join(work, f"head_{i}.png")
-            render_headshot_frame(frame, stat=seg.get("stat"))
-            run([
-                "ffmpeg", "-y",
-                "-loop", "1", "-framerate", "24000/1001",
-                "-t", str(dur), "-i", frame,
-                "-i", wav,
-                "-map", "0:v", "-map", "1:a",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "128k",
-                "-shortest",
-                vid,
-            ])
+            print(f"    Seg {i}: talking head ({dur:.2f}s from offset {head_offset}s)")
+
+            if seg.get("stat"):
+                stat_png = os.path.join(work, f"stat_{i}.png")
+                render_stat_bar(stat_png, seg["stat"])
+                run([
+                    "ffmpeg", "-y",
+                    "-ss", str(head_offset), "-t", str(dur), "-i", TALKING_HEAD,
+                    "-i", stat_png,
+                    "-i", wav,
+                    "-filter_complex", f"[0:v][1:v]overlay=0:{H - 60}[vout]",
+                    "-map", "[vout]", "-map", "2:a",
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-r", "24000/1001", "-s", f"{W}x{H}",
+                    "-shortest",
+                    vid,
+                ])
+            else:
+                run([
+                    "ffmpeg", "-y",
+                    "-ss", str(head_offset), "-t", str(dur), "-i", TALKING_HEAD,
+                    "-i", wav,
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-r", "24000/1001", "-s", f"{W}x{H}",
+                    "-shortest",
+                    vid,
+                ])
+            head_offset += min(dur, 8)  # advance but keep within 60s source
+            if head_offset > 50:
+                head_offset = 2  # loop back
         else:
             print(f"    Seg {i}: demo ({dur:.2f}s)")
             frame = os.path.join(work, f"demo_{i}.png")
