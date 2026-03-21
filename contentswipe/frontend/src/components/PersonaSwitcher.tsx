@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Layers, Video } from "lucide-react";
+import { ChevronDown, Layers, Video, Plane, Building2, Gamepad2, Coffee, User } from "lucide-react";
 import type { Persona } from "../lib/personas";
 
 const ICONS: Record<Persona["icon"], typeof Layers> = {
   layers: Layers,
   video: Video,
+  plane: Plane,
+  building: Building2,
+  gamepad: Gamepad2,
+  coffee: Coffee,
+  user: User,
 };
 
 interface PersonaSwitcherProps {
@@ -40,8 +45,11 @@ export function PersonaSwitcher({
         onClick={() => setOpen((value) => !value)}
         className="surface-pill flex items-center gap-3 rounded-[22px] px-4 py-3 text-left transition-colors hover:bg-white"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#eff6ff_0%,#e2e8f0_100%)] text-slate-500">
-          <Icon className="h-4 w-4" />
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: `${current.color}18` }}
+        >
+          <Icon className="h-4 w-4" style={{ color: current.color }} />
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">{current.name}</p>
@@ -69,8 +77,16 @@ export function PersonaSwitcher({
                   isActive ? "bg-slate-900 text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)]" : "text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <div className={`rounded-2xl p-2 ${isActive ? "bg-white/12" : "bg-slate-100"}`}>
-                  <PersonaIcon className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-500"}`} />
+                <div
+                  className="rounded-2xl p-2"
+                  style={{
+                    backgroundColor: isActive ? "rgba(255,255,255,0.12)" : `${persona.color}15`,
+                  }}
+                >
+                  <PersonaIcon
+                    className="h-4 w-4"
+                    style={{ color: isActive ? "white" : persona.color }}
+                  />
                 </div>
                 <div>
                   <p className="text-sm font-medium">{persona.name}</p>

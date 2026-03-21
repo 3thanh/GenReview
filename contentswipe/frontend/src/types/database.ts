@@ -14,6 +14,7 @@ export interface ContentItem {
   id: string;
   business_id: string | null;
   session_id: string | null;
+  persona_id: string | null;
   content_type: ContentType;
   channel: string | null;
   review_mode: string | null;
@@ -48,6 +49,7 @@ export interface ContentItemInsert {
   id?: string;
   business_id?: string | null;
   session_id?: string | null;
+  persona_id?: string | null;
   content_type?: ContentType;
   channel?: string | null;
   review_mode?: string | null;

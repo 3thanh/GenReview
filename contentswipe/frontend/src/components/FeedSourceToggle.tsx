@@ -5,26 +5,14 @@ interface FeedSourceToggleProps {
   onChange: (value: FeedSourceMode) => void;
 }
 
-const OPTIONS: Array<{
-  value: FeedSourceMode;
-  label: string;
-  caption: string;
-}> = [
-  {
-    value: "real",
-    label: "Real",
-    caption: "Live Supabase queue",
-  },
-  {
-    value: "demo",
-    label: "Demo",
-    caption: "Seeded cached cards",
-  },
+const OPTIONS: Array<{ value: FeedSourceMode; label: string }> = [
+  { value: "real", label: "Real" },
+  { value: "demo", label: "Demo" },
 ];
 
 export function FeedSourceToggle({ value, onChange }: FeedSourceToggleProps) {
   return (
-    <div className="surface-pill inline-flex rounded-[22px] p-1">
+    <div className="inline-flex rounded-full border border-slate-200/90 bg-white/78 p-0.5">
       {OPTIONS.map((option) => {
         const isActive = option.value === value;
 
@@ -33,17 +21,14 @@ export function FeedSourceToggle({ value, onChange }: FeedSourceToggleProps) {
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`rounded-[14px] px-4 py-2 text-left transition ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
               isActive
-                ? "bg-slate-900 text-white shadow-[0_12px_28px_rgba(15,23,42,0.16)]"
-                : "text-slate-500 hover:bg-white hover:text-slate-900"
+                ? "bg-slate-900 text-white shadow-[0_4px_12px_rgba(15,23,42,0.16)]"
+                : "text-slate-500 hover:text-slate-900"
             }`}
             aria-pressed={isActive}
           >
-            <p className="text-sm font-semibold">{option.label}</p>
-            <p className={`text-[11px] ${isActive ? "text-white/70" : "text-slate-400"}`}>
-              {option.caption}
-            </p>
+            {option.label}
           </button>
         );
       })}

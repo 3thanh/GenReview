@@ -29,7 +29,7 @@ import type {
   SessionInsert,
   SwipeDirection,
 } from "../types/database";
-import type { Persona } from "../lib/personas";
+import { createBlankPersona, type Persona } from "../lib/personas";
 
 interface Message {
   id: string;

@@ -3,6 +3,8 @@ import { Star } from "lucide-react";
 import type { ContentItem } from "../types/database";
 import { VideoCard } from "./VideoCard";
 import type { VideoCardHandle } from "./VideoCard";
+import type { Persona } from "../lib/personas";
+import { getPersonaById } from "../lib/personas";
 
 interface ContentCardProps {
   card: ContentItem;
@@ -10,6 +12,7 @@ interface ContentCardProps {
   onTogglePlay: () => void;
   videoRef?: React.Ref<VideoCardHandle>;
   onRequestRegen?: (editedScript: string) => void;
+  personas?: Persona[];
 }
 
 export const ContentCard = forwardRef<unknown, ContentCardProps>(
@@ -19,24 +22,51 @@ export const ContentCard = forwardRef<unknown, ContentCardProps>(
     onTogglePlay,
     videoRef,
     onRequestRegen,
+    personas,
   }) {
+    const persona = getPersonaById(personas ?? [], card.persona_id);
+
     return (
       <div className="mx-auto flex h-full w-full max-w-[min(92vw,720px)]">
         <div className="surface-card flex h-full max-h-[calc(100vh-13rem)] w-full flex-col overflow-hidden rounded-[28px]">
-          <div className="flex items-center justify-end gap-2 px-4 pb-2 pt-3">
-            {card.starred && (
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-            )}
-            <span className="text-[11px] text-slate-400">
-              {card.created_at
-                ? new Date(card.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
-                : ""}
-            </span>
+          <div className="flex items-center justify-between px-4 pb-2 pt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-sky-200 bg-sky-50 text-sky-700">
+                Video
+              </span>
+              {persona && (
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
+                  style={{
+                    color: persona.color,
+                    borderColor: `${persona.color}40`,
+                    backgroundColor: `${persona.color}12`,
+                  }}
+                >
+                  {persona.name}
+                </span>
+              )}
+              {card.channel && (
+                <span className="text-[10px] capitalize text-slate-400">
+                  {card.channel}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {card.starred && (
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+              )}
+              <span className="text-[11px] text-slate-400">
+                {card.created_at
+                  ? new Date(card.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : ""}
+              </span>
+            </div>
           </div>
 
           <VideoCard

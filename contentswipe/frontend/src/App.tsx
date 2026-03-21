@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navbar } from "./components/Navbar";
-import { SwipeFeed } from "./components/SwipeFeed";
+import { SwipeFeed, type FeedStats } from "./components/SwipeFeed";
 import { Studio } from "./components/Studio";
 import type { FeedSourceMode } from "./lib/feed-source";
 import {
@@ -62,6 +62,8 @@ function getInitialAppState() {
 export default function App() {
   const [{ personas, activePersonaId, feedSourceMode }, setAppState] = useState(getInitialAppState);
   const [view, setView] = useState<"feed" | "studio">("feed");
+  const [feedStats, setFeedStats] = useState<FeedStats>({ remaining: 0, approved: 0, rejected: 0 });
+  const handleStatsChange = useCallback((s: FeedStats) => setFeedStats(s), []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

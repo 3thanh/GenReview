@@ -7,12 +7,16 @@ import { ContentCard } from "./ContentCard";
 import { ActionBar } from "./ActionBar";
 import { FeedbackDrawer } from "./FeedbackDrawer";
 import { EmptyState } from "./EmptyState";
-import { FeedSourceToggle } from "./FeedSourceToggle";
-import { PersonaSwitcher } from "./PersonaSwitcher";
 import type { VideoCardHandle } from "./VideoCard";
 import type { FeedSourceMode } from "../lib/feed-source";
 import type { SwipeDirection } from "../types/database";
 import type { Persona } from "../lib/personas";
+
+export interface FeedStats {
+  remaining: number;
+  approved: number;
+  rejected: number;
+}
 
 interface SwipeFeedProps {
   personas: Persona[];
@@ -21,6 +25,7 @@ interface SwipeFeedProps {
   onChangeFeedSourceMode: (mode: FeedSourceMode) => void;
   onSelectPersona: (personaId: string) => void;
   onNavigateToStudio: () => void;
+  onStatsChange?: (stats: FeedStats) => void;
 }
 
 const SWIPE_VARIANTS = {
@@ -55,6 +60,7 @@ export function SwipeFeed({
   onChangeFeedSourceMode,
   onSelectPersona,
   onNavigateToStudio,
+  onStatsChange,
 }: SwipeFeedProps) {
   const persona =
     personas.find((item) => item.id === activePersonaId) ?? personas[0];
@@ -92,28 +98,13 @@ export function SwipeFeed({
     setIsPlaying(true);
   }, [currentCard?.id]);
 
-  const statCards = [
-    {
-      label: "Remaining",
-      value: queueLength,
-      valueClassName: "text-slate-900",
-      surfaceClassName: "surface-card",
-    },
-    {
-      label: "Approved",
-      value: stats.approved,
-      valueClassName: "text-approve",
-      surfaceClassName:
-        "border border-emerald-200 bg-emerald-50/90 shadow-[0_16px_40px_rgba(16,185,129,0.08)]",
-    },
-    {
-      label: "Rejected",
-      value: stats.rejected,
-      valueClassName: "text-reject",
-      surfaceClassName:
-        "border border-rose-200 bg-rose-50/90 shadow-[0_16px_40px_rgba(244,63,94,0.08)]",
-    },
-  ];
+  useEffect(() => {
+    onStatsChange?.({
+      remaining: queueLength,
+      approved: stats.approved,
+      rejected: stats.rejected,
+    });
+  }, [queueLength, stats.approved, stats.rejected, onStatsChange]);
 
   const captureVideoTimestamp = useCallback(() => {
     const time = videoCardRef.current?.getCurrentTime() ?? null;
@@ -220,38 +211,7 @@ export function SwipeFeed({
   }
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] flex-col">
-      <div className="relative z-20 flex items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <FeedSourceToggle
-            value={feedSourceMode}
-            onChange={onChangeFeedSourceMode}
-          />
-          <PersonaSwitcher
-            personas={personas}
-            current={persona}
-            onSelect={(nextPersona) => onSelectPersona(nextPersona.id)}
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {statCards.map((card) => (
-            <div
-              key={card.label}
-              className={`flex items-center gap-2 rounded-2xl px-3 py-2 ${card.surfaceClassName}`}
-            >
-              <span
-                className={`text-lg font-extrabold leading-none ${card.valueClassName}`}
-              >
-                {card.value}
-              </span>
-              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                {card.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {error && (
         <div className="px-4 pb-2 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -286,6 +246,7 @@ export function SwipeFeed({
                   isPlaying={isPlaying}
                   onTogglePlay={handleTogglePlay}
                   onRequestRegen={handleRequestRegen}
+                  personas={personas}
                 />
               </motion.div>
             )}
