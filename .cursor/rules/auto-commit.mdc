@@ -1,0 +1,16 @@
+---
+description: Automatically commit and push changes after each meaningful task
+alwaysApply: true
+---
+
+# Auto-commit after every task
+
+After completing any meaningful change (file edits, new files, refactors, doc updates), immediately:
+
+1. `git add` the relevant files
+2. `git commit` with a concise message describing what changed
+3. `git push` to the remote
+
+Do this after each logical unit of work — don't batch multiple unrelated changes into one commit. If multiple files were changed as part of the same task, they go in one commit. If you do several separate tasks in a row, each gets its own commit + push.
+
+Never skip the push step. The remote should always reflect the latest state.

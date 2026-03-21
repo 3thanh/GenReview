@@ -1,0 +1,5 @@
+{
+  "name": "Brainstorm Ideas",
+  "content_type": "video_script",
+  "template": "Generate 3-5 completely different short-form video concepts for {{business_name}}.\n\nBusiness description: {{business_description}}\nWebsite: {{website_url}}\n\n{{#if feedback}}\nThe user wants ideas in this direction: {{feedback}}\n{{/if}}\n\nFor each concept provide:\n1. A catchy title\n2. A brief description (2-3 sentences)\n3. The full video script with visual directions\n\nMake each concept distinctly different in tone, style, and approach."
+}

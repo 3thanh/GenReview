@@ -1,0 +1,5 @@
+{
+  "name": "Variant Modifier",
+  "content_type": "video_script",
+  "template": "Create a VARIANT of the following video script for {{business_name}}.\n\nOriginal script:\n{{original_script}}\n\nUser feedback on what to change:\n{{feedback}}\n\nKeep the core concept but adjust based on the feedback. Business context: {{business_description}}"
+}
