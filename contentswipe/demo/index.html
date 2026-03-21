@@ -25,7 +25,7 @@ body{
 /* ─── Top bar ─── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:16px 24px;z-index:10;
+  padding:10px 24px;z-index:10;
 }
 .logo{
   font-family:'Space Mono',monospace;font-weight:700;font-size:18px;
@@ -37,7 +37,7 @@ body{
 
 /* ─── Persona picker ─── */
 .persona-strip{
-  display:flex;gap:8px;padding:0 24px 12px;overflow-x:auto;
+  display:flex;gap:8px;padding:0 24px 8px;overflow-x:auto;
   scrollbar-width:none;
 }
 .persona-strip::-webkit-scrollbar{display:none}
@@ -63,9 +63,9 @@ body{
 .card-stage{
   flex:1;display:flex;align-items:center;justify-content:center;
   position:relative;perspective:1200px;padding:0 24px;
-  overflow:hidden;
+  overflow:hidden;min-height:0;
 }
-.card-stack{position:relative;width:420px;max-width:100%;aspect-ratio:9/14}
+.card-stack{position:relative;width:100%;max-width:520px;height:100%;max-height:100%}
 
 .card{
   position:absolute;inset:0;border-radius:var(--radius);
@@ -281,7 +281,7 @@ body{
 /* ─── Action bar ─── */
 .action-bar{
   display:flex;justify-content:center;gap:12px;
-  padding:16px 24px 28px;z-index:10;
+  padding:12px 24px 20px;z-index:10;
 }
 .action-btn{
   width:56px;height:56px;border-radius:50%;border:2px solid;
@@ -487,54 +487,7 @@ const DEMO_CARDS = [
     script: "Last month we did something radical.\n\nWe killed our dashboard.\n\nNot because it was broken. Because it was working perfectly — and nobody was using it.\n\n87% of our users logged in, glanced at the charts, and logged out. No action taken.\n\nSo we replaced it with something better: insights that come to YOU.\n\n• Anomaly? Slack ping.\n• Trend shift? Email digest.\n• Opportunity? Push notification.\n\nThe best dashboard is one you never have to open.\n\nHot take? Maybe. But our activation rate is up 340%.\n\nWhat's your most-ignored dashboard?",
     gradient: "linear-gradient(135deg,#172554,#1e40af,#3b82f6)"
   },
-  {
-    id: "l3", title: "Fashion Has a Waste Problem", content_type: "linkedin_post",
-    business_id: "b3", status: "pending",
-    author: { name: "Eloise Duval", headline: "Creative Director @ Maison Noir | Ethical fashion", initials: "ED" },
-    description: "Sustainability-focused post that positions Maison Noir's approach to ethical fashion and limited runs.",
-    script: "92 million tons of textile waste. Every year.\n\nThat's not a fashion problem. That's a humanity problem.\n\nAt Maison Noir, we made a decision early:\n\n1. Never produce more than we can sell\n2. Every fabric is deadstock or certified organic\n3. If it can't last 10 years, we don't make it\n\nOur margins are thinner. Our drops are smaller.\n\nBut our pieces don't end up in landfills.\n\nFashion should outlive trends.\n\n♻️ What brands are doing it right? Tag them below.",
-    gradient: "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)"
-  },
-
-  {
-    id: "l4", title: "GTC 2026 Recap — CuTile & DGX Spark", content_type: "linkedin_post",
-    business_id: "b4", status: "pending",
-    author: { name: "Lakshmi Ramesh", headline: "Systems Software Engineer @ NVIDIA | MS Research Thesis in ML", initials: "LR" },
-    description: "Personal recap post from NVIDIA GTC 2026 — highlights showcasing CuTile kernel library, supporting the DGX Spark training lab, and the Build-a-Claw booth experience.",
-    script: "Had an incredible experience at NVIDIA GTC 2026! 🚀\n\nI had the opportunity to showcase CuTile, a kernel development library by NVIDIA designed to simplify writing high-performance GPU kernels with a more intuitive, Python-friendly workflow. Using NVIDIA DGX Spark, developers can prototype and experiment locally, and then scale their workloads to the cloud ⚡\n\nI also supported the \"Hands-On NVIDIA DGX Spark\" training lab, where we guided participants through building AI agents end-to-end 🧑‍💻. It was a fantastic experience working alongside Piyush Medikeri, Federico Galbiati, and many others who made this lab such a success.\n\nIn addition, I spent some time at the Build-a-Claw booth at GTC, where we helped users customize and deploy their own secure OpenClaw agents on DGX Spark or RTX GPUs 🎨.\n\nOverall, GTC was an amazing experience — great conversations, inspiring demos, and the chance to connect with so many talented people from around the world 🌍✨\n\n#GTC2026 #NVIDIAGTC #NVIDIAAI #AI #GenerativeAI #AIEngineering #DGX #DGXSpark #AICommunity #AIAgents #AgenticAI #OpenClaw",
-    gradient: "linear-gradient(135deg,#1a3a0a,#76b900,#93d100)"
-  },
-  {
-    id: "l5", title: "clay-gtm-cli: Clay as Agent-Callable Functions", content_type: "linkedin_post",
-    business_id: "b5", status: "pending",
-    author: { name: "Brandon Charleson", headline: "AI-powered junkie / Clay & Automation Expert / Cold email strategist", initials: "BC" },
-    description: "Tutorial announcement post about clay-gtm-cli — a paradigm shift from using Clay as a spreadsheet to using it as a function platform that AI agents can call directly.",
-    script: "By popular demand — I recorded a full tutorial on clay-gtm-cli.\n\nBut first, let me explain why this is a completely different way to use Clay.\n\nMost people use Clay like a spreadsheet. A platform in which we spend thousands of hours in.\n\nBuild a table. Add enrichment steps. Watch the rows fill in. Add to campaign. Send to CRM. Export the CSV. Repeat.\n\nThat workflow works. But you're the operator.\n\nYou're sitting between every step — manually triggering, manually moving data, manually doing the thing Clay was supposed to automate.\n\n\"Let me rebuild this table I built 6+ months ago!\" -- said no one ever.\n\nHere's the shift:\n\nWhat if Clay wasn't a spreadsheet you live inside — but a function platform your agent calls?\n\nThat's what clay-gtm-cli does.\n\nYou're now the Orchestrator and the Agent Manager.\n\nYou build the enrichment logic once in Clay — LeadMagic, Prospeo, Ocean.io, Octave, Enrichley, ContactOut, whatever combination you need. Then your AI agent calls it by name. One command. Structured JSON back. No dashboard. No export. No human in the loop.\n\nIn the tutorial I cover:\n\n→ Installing clay-gtm-cli (2 minutes)\n→ Registering your first Clay table as a callable function\n→ The cloudflared tunnel trick that makes callbacks work locally\n→ Running a live enrichment — fire, wait, get JSON\n→ Wiring it up as an MCP server so Claude or Cursor can call Clay directly\n→ Row limit tracking (so Clay doesn't silently stop on you at 50K)\n\nThe full stack in action:\n\ninstantly-cli → outbound for Instantly.ai (campaigns, leads, replies)\nclay-gtm-cli → enrichment (Clay as agent-callable functions)\nn8n → automations (the evergreen plumbing between everything)\nOpenClaw → the agent that orchestrates all of it\n\nThis isn't a concept. This is running. Right now. 🍻",
-    gradient: "linear-gradient(135deg,#3d1e08,#c45a1c,#e87040)"
-  },
-
-  // ── Support Replies — Intercom conversation threads ──
-  {
-    id: "s1", title: "Workflow automation not triggering for new contacts",
-    content_type: "support_reply", business_id: "b2", status: "pending",
-    conversation: {
-      customer: { name: "Peter Klutte", initials: "PK" },
-      channel: "intercom", ticket_ref: "215473478",
-      ai_confidence: 0.72,
-      messages: [
-        { role: "customer", name: "Peter Klutte", text: "Hi, we set up a workflow automation to send a welcome email when new contacts are added via the API, but it's not triggering for any contacts added in the past 24 hours.", time: "11:42 AM" },
-        { role: "bot", name: "Fin AI", text: "Thanks for reaching out, Peter. Let me look into your workflow configuration.\n\nCould you confirm which API endpoint you're using to create contacts? The automation trigger depends on the contact source being correctly tagged.", time: "11:42 AM" },
-        { role: "customer", name: "Peter Klutte", text: "We're using POST /v2/contacts with the standard payload. It was working fine until yesterday. We haven't changed anything on our end.", time: "11:45 AM" },
-        { role: "bot", name: "Fin AI", text: "I can see the contacts are being created successfully in your account. However, I notice the workflow trigger is set to fire on 'contact.created' events, but there's a known issue where contacts created via bulk import endpoints don't emit this event.\n\nAre you sending contacts one at a time or in batches?", time: "11:45 AM" },
-        { role: "customer", name: "Peter Klutte", text: "We switched to batch mode yesterday to handle higher volume. Could that be the issue?", time: "11:48 AM" },
-        { role: "bot", name: "Fin AI", text: "That's the issue. The batch endpoint (/v2/contacts/bulk) doesn't trigger individual 'contact.created' webhook events — it fires a single 'bulk_import.completed' event instead.\n\nYou have two options:\n\n1. Switch your workflow trigger to listen for 'bulk_import.completed'\n2. Continue using the single-contact endpoint with rate limiting\n\nI'd recommend option 1 if you need to handle volume.", time: "11:48 AM" },
-        { role: "customer", name: "Peter Klutte", text: "Ok that makes sense, but we also need to send personalized welcome emails per contact, not a single batch notification. Can the bulk trigger still do that?", time: "11:52 AM" },
-        { role: "bot", name: "Fin AI", status: "failed", text: "I'm not able to confirm whether the bulk import trigger supports per-contact personalization in workflows. Let me escalate this to someone who can help.", time: "11:52 AM" },
-        { role: "customer", name: "Peter Klutte", text: "Please do — this is blocking our onboarding flow for new users. We have 200+ contacts queued up waiting for welcome emails.", time: "11:55 AM" },
-      ],
-    },
-    description: "Hi Peter,\n\nGood news — the bulk import trigger does support per-contact personalization. When the 'bulk_import.completed' event fires, it includes the full list of contact IDs, and your workflow can iterate over each one individually.\n\nHere's how to set it up:\n\n1. Change your workflow trigger from 'contact.created' to 'bulk_import.completed'\n2. Add a 'For Each Contact' loop step after the trigger\n3. Your existing email template with {{first_name}} and other merge tags will work inside the loop\n\nFor the 200+ contacts currently queued, I can manually re-trigger the workflow for them right now. Want me to go ahead?\n\nAlso, I've flagged to our engineering team that the batch endpoint should emit individual contact.created events — it's a common gotcha.",
-  },
+  // ── 5. s2 — Custom attributes not syncing to Salesforce ──
   {
     id: "s2", title: "Custom attributes not syncing to Salesforce integration",
     content_type: "support_reply", business_id: "b2", status: "pending",
@@ -558,6 +511,109 @@ const DEMO_CARDS = [
     },
     description: "Hi Adriana,\n\nQuick update — I've triggered the backfill re-sync for all contacts modified in the last 72 hours. Here's the status:\n\n• 847 contacts queued for re-sync\n• Estimated completion: ~45 minutes\n• Fields being pushed: plan_type, company_size, arr_band\n\nI've also enabled sync error notifications for your workspace. You'll now get an email alert if any field-level permission changes block the integration.\n\nOnce the re-sync completes, I'll send you a confirmation with a summary of how many records were updated.\n\nLet me know if you notice anything off with your lead scoring after the data lands!",
   },
+  // ── 6. s1 — Workflow automation not triggering ──
+  {
+    id: "s1", title: "Workflow automation not triggering for new contacts",
+    content_type: "support_reply", business_id: "b2", status: "pending",
+    conversation: {
+      customer: { name: "Peter Klutte", initials: "PK" },
+      channel: "intercom", ticket_ref: "215473478",
+      ai_confidence: 0.72,
+      messages: [
+        { role: "customer", name: "Peter Klutte", text: "Hi, we set up a workflow automation to send a welcome email when new contacts are added via the API, but it's not triggering for any contacts added in the past 24 hours.", time: "11:42 AM" },
+        { role: "bot", name: "Fin AI", text: "Thanks for reaching out, Peter. Let me look into your workflow configuration.\n\nCould you confirm which API endpoint you're using to create contacts? The automation trigger depends on the contact source being correctly tagged.", time: "11:42 AM" },
+        { role: "customer", name: "Peter Klutte", text: "We're using POST /v2/contacts with the standard payload. It was working fine until yesterday. We haven't changed anything on our end.", time: "11:45 AM" },
+        { role: "bot", name: "Fin AI", text: "I can see the contacts are being created successfully in your account. However, I notice the workflow trigger is set to fire on 'contact.created' events, but there's a known issue where contacts created via bulk import endpoints don't emit this event.\n\nAre you sending contacts one at a time or in batches?", time: "11:45 AM" },
+        { role: "customer", name: "Peter Klutte", text: "We switched to batch mode yesterday to handle higher volume. Could that be the issue?", time: "11:48 AM" },
+        { role: "bot", name: "Fin AI", text: "That's the issue. The batch endpoint (/v2/contacts/bulk) doesn't trigger individual 'contact.created' webhook events — it fires a single 'bulk_import.completed' event instead.\n\nYou have two options:\n\n1. Switch your workflow trigger to listen for 'bulk_import.completed'\n2. Continue using the single-contact endpoint with rate limiting\n\nI'd recommend option 1 if you need to handle volume.", time: "11:48 AM" },
+        { role: "customer", name: "Peter Klutte", text: "Ok that makes sense, but we also need to send personalized welcome emails per contact, not a single batch notification. Can the bulk trigger still do that?", time: "11:52 AM" },
+        { role: "bot", name: "Fin AI", status: "failed", text: "I'm not able to confirm whether the bulk import trigger supports per-contact personalization in workflows. Let me escalate this to someone who can help.", time: "11:52 AM" },
+        { role: "customer", name: "Peter Klutte", text: "Please do — this is blocking our onboarding flow for new users. We have 200+ contacts queued up waiting for welcome emails.", time: "11:55 AM" },
+      ],
+    },
+    description: "Hi Peter,\n\nGood news — the bulk import trigger does support per-contact personalization. When the 'bulk_import.completed' event fires, it includes the full list of contact IDs, and your workflow can iterate over each one individually.\n\nHere's how to set it up:\n\n1. Change your workflow trigger from 'contact.created' to 'bulk_import.completed'\n2. Add a 'For Each Contact' loop step after the trigger\n3. Your existing email template with {{first_name}} and other merge tags will work inside the loop\n\nFor the 200+ contacts currently queued, I can manually re-trigger the workflow for them right now. Want me to go ahead?\n\nAlso, I've flagged to our engineering team that the batch endpoint should emit individual contact.created events — it's a common gotcha.",
+  },
+  // ── 7. gv1 — Cerebral Valley ──
+  {
+    id: "gv1", title: "Where AI Builders Go — Cerebral Valley", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "20s video ad: Fast, punchy intro to Cerebral Valley. Hackathons, events, and a global AI community.",
+    video_url: "https://rnqkjfrwkyupkyvygtpg.supabase.co/storage/v1/object/public/content-videos/uploads/1774114548692-cv-ad.mp4",
+    script: "[0:00–0:03] Hook\nVO: \"This is where AI builders actually connect.\"\n\n[0:04–0:08] Credibility\nVO: \"Thousands of founders, engineers, and investors…\"\n\n[0:09–0:13] Value\nVO: \"…meeting through hackathons, events, and a global AI community.\"\n\n[0:14–0:17] Positioning\nVO: \"If you're serious about AI — this is where you show up.\"\n\n[0:18–0:20] CTA\nVO: \"Join Cerebral Valley.\"\ncerebralvalley.ai/u/cv",
+    gradient: "linear-gradient(135deg,#0f172a,#1e40af,#3b82f6)"
+  },
+
+  // ── 8–10. Remaining LinkedIn Posts ──
+  {
+    id: "l3", title: "Fashion Has a Waste Problem", content_type: "linkedin_post",
+    business_id: "b3", status: "pending",
+    author: { name: "Eloise Duval", headline: "Creative Director @ Maison Noir | Ethical fashion", initials: "ED" },
+    description: "Sustainability-focused post that positions Maison Noir's approach to ethical fashion and limited runs.",
+    script: "92 million tons of textile waste. Every year.\n\nThat's not a fashion problem. That's a humanity problem.\n\nAt Maison Noir, we made a decision early:\n\n1. Never produce more than we can sell\n2. Every fabric is deadstock or certified organic\n3. If it can't last 10 years, we don't make it\n\nOur margins are thinner. Our drops are smaller.\n\nBut our pieces don't end up in landfills.\n\nFashion should outlive trends.\n\n♻️ What brands are doing it right? Tag them below.",
+    gradient: "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)"
+  },
+  {
+    id: "l4", title: "GTC 2026 Recap — CuTile & DGX Spark", content_type: "linkedin_post",
+    business_id: "b4", status: "pending",
+    author: { name: "Lakshmi Ramesh", headline: "Systems Software Engineer @ NVIDIA | MS Research Thesis in ML", initials: "LR" },
+    description: "Personal recap post from NVIDIA GTC 2026 — highlights showcasing CuTile kernel library, supporting the DGX Spark training lab, and the Build-a-Claw booth experience.",
+    script: "Had an incredible experience at NVIDIA GTC 2026! 🚀\n\nI had the opportunity to showcase CuTile, a kernel development library by NVIDIA designed to simplify writing high-performance GPU kernels with a more intuitive, Python-friendly workflow. Using NVIDIA DGX Spark, developers can prototype and experiment locally, and then scale their workloads to the cloud ⚡\n\nI also supported the \"Hands-On NVIDIA DGX Spark\" training lab, where we guided participants through building AI agents end-to-end 🧑‍💻. It was a fantastic experience working alongside Piyush Medikeri, Federico Galbiati, and many others who made this lab such a success.\n\nIn addition, I spent some time at the Build-a-Claw booth at GTC, where we helped users customize and deploy their own secure OpenClaw agents on DGX Spark or RTX GPUs 🎨.\n\nOverall, GTC was an amazing experience — great conversations, inspiring demos, and the chance to connect with so many talented people from around the world 🌍✨\n\n#GTC2026 #NVIDIAGTC #NVIDIAAI #AI #GenerativeAI #AIEngineering #DGX #DGXSpark #AICommunity #AIAgents #AgenticAI #OpenClaw",
+    gradient: "linear-gradient(135deg,#1a3a0a,#76b900,#93d100)"
+  },
+  {
+    id: "l5", title: "clay-gtm-cli: Clay as Agent-Callable Functions", content_type: "linkedin_post",
+    business_id: "b5", status: "pending",
+    author: { name: "Brandon Charleson", headline: "AI-powered junkie / Clay & Automation Expert / Cold email strategist", initials: "BC" },
+    description: "Tutorial announcement post about clay-gtm-cli — a paradigm shift from using Clay as a spreadsheet to using it as a function platform that AI agents can call directly.",
+    script: "By popular demand — I recorded a full tutorial on clay-gtm-cli.\n\nBut first, let me explain why this is a completely different way to use Clay.\n\nMost people use Clay like a spreadsheet. A platform in which we spend thousands of hours in.\n\nBuild a table. Add enrichment steps. Watch the rows fill in. Add to campaign. Send to CRM. Export the CSV. Repeat.\n\nThat workflow works. But you're the operator.\n\nYou're sitting between every step — manually triggering, manually moving data, manually doing the thing Clay was supposed to automate.\n\n\"Let me rebuild this table I built 6+ months ago!\" -- said no one ever.\n\nHere's the shift:\n\nWhat if Clay wasn't a spreadsheet you live inside — but a function platform your agent calls?\n\nThat's what clay-gtm-cli does.\n\nYou're now the Orchestrator and the Agent Manager.\n\nYou build the enrichment logic once in Clay — LeadMagic, Prospeo, Ocean.io, Octave, Enrichley, ContactOut, whatever combination you need. Then your AI agent calls it by name. One command. Structured JSON back. No dashboard. No export. No human in the loop.\n\nIn the tutorial I cover:\n\n→ Installing clay-gtm-cli (2 minutes)\n→ Registering your first Clay table as a callable function\n→ The cloudflared tunnel trick that makes callbacks work locally\n→ Running a live enrichment — fire, wait, get JSON\n→ Wiring it up as an MCP server so Claude or Cursor can call Clay directly\n→ Row limit tracking (so Clay doesn't silently stop on you at 50K)\n\nThe full stack in action:\n\ninstantly-cli → outbound for Instantly.ai (campaigns, leads, replies)\nclay-gtm-cli → enrichment (Clay as agent-callable functions)\nn8n → automations (the evergreen plumbing between everything)\nOpenClaw → the agent that orchestrates all of it\n\nThis isn't a concept. This is running. Right now. 🍻",
+    gradient: "linear-gradient(135deg,#3d1e08,#c45a1c,#e87040)"
+  },
+
+  // ── 11–16. Video Scripts ──
+  {
+    id: "v1", title: "Morning Ritual", content_type: "video_script",
+    business_id: "b1", status: "pending",
+    description: "Show the journey from bean to cup — a 15-second visual of beans being roasted, ground, and brewed into a perfect pour-over.",
+    script: "[OPEN: Close-up of raw green beans]\nVO: \"Every morning starts with a single bean.\"\n\n[CUT: Beans tumbling in roaster, golden smoke]\nSFX: gentle crackling, warm hum\n\n[CUT: Hand grinding fresh beans]\nVO: \"Ground fresh. Brewed slow.\"\n\n[CUT: Hot water spiraling over grounds]\nSFX: water pouring, ceramic resonance\n\n[CLOSE: Steam rising, sunrise background]\nVO: \"From farm to your morning. Acme Coffee Co.\"",
+    gradient: "linear-gradient(135deg,#4c1d95,#7c3aed,#a855f7)"
+  },
+  {
+    id: "v2", title: "Behind the Scenes: Roasting Day", content_type: "video_script",
+    business_id: "b1", status: "pending",
+    description: "Take viewers behind the scenes at the roastery. Show the team, the craft, the smell you can almost feel through the screen.",
+    script: "[OPEN: Door opening to roastery, warm light]\nVO: \"Not many people get to see this.\"\n\n[CUT: Roaster checking temperature dial]\nSFX: mechanical hum, beans shifting\n\n[CUT: Beans pouring out, crackling]\nVO: \"Every batch — a labor of love.\"\n\n[CUT: Team cupping session]\nSFX: slurping, quiet laughter\n\n[CLOSE: Bags stamped with Acme logo]\nVO: \"Taste the craft. Link in bio.\"",
+    gradient: "linear-gradient(135deg,#7c2d12,#c2410c,#ea580c)"
+  },
+  {
+    id: "v3", title: "Customer Reaction Challenge", content_type: "video_script",
+    business_id: "b1", status: "pending",
+    description: "Film real customers trying our new Ethiopian single-origin for the first time. Capture genuine surprise and delight.",
+    script: "[OPEN: Text 'We asked strangers to try our new roast']\nMusic: upbeat, feel-good\n\n[CUT: Person 1 sips, eyes widen]\n\"Wait, that's incredible.\"\n\n[CUT: Person 2 laughs]\n\"This doesn't taste like any coffee I've had.\"\n\n[CUT: Person 3]\n\"Where do I buy this?!\"\n\n[CLOSE: Acme logo + 'Link in bio']",
+    gradient: "linear-gradient(135deg,#166534,#16a34a,#4ade80)"
+  },
+  {
+    id: "v4", title: "Product Launch: Drift Analytics", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "Announce the new analytics dashboard with a fast-paced montage of the UI, data flowing, insights appearing.",
+    script: "[OPEN: Dark screen, cursor appears]\nVO: \"Your data has been trying to tell you something.\"\n\n[CUT: Dashboard loading, charts animate in]\nSFX: soft digital chime\n\n[CUT: Rapid montage — filters, drill-downs, exports]\nVO: \"Now you can finally listen.\"\n\n[CLOSE: Drift logo pulse]\nVO: \"Drift Analytics. See what you've been missing.\"",
+    gradient: "linear-gradient(135deg,#1e3a5f,#2563eb,#60a5fa)"
+  },
+  {
+    id: "v5", title: "Founder Story: Why We Built Drift", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "Authentic founder-led storytelling about the problem that inspired Drift and why existing solutions weren't cutting it.",
+    script: "[OPEN: Founder at desk, natural lighting]\nVO: \"I spent 3 years building reports nobody read.\"\n\n[CUT: Whiteboard sketches, early prototypes]\nVO: \"So I asked — what if the data came to you?\"\n\n[CUT: First customer reaction]\nSFX: notification ding\n\n[CLOSE: Product shot + team]\nVO: \"That's Drift. Built by people who were tired of dashboards.\"",
+    gradient: "linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)"
+  },
+  {
+    id: "v6", title: "Fall Collection Teaser", content_type: "video_script",
+    business_id: "b3", status: "pending",
+    description: "Moody, editorial teaser for the fall/winter collection. Think runway meets street style.",
+    script: "[OPEN: Slow pan across fabrics hanging]\nSFX: ambient drone, fabric rustling\n\n[CUT: Model walks through fog, silhouette]\nVO: \"Darkness is not the absence of light.\"\n\n[CUT: Close-up details — stitching, texture, buttons]\nSFX: clock ticking\n\n[CUT: Full look reveal, wind catches coat]\nVO: \"It's where you find yourself.\"\n\n[CLOSE: MAISON NOIR — Fall '26]\nSFX: deep bass hit",
+    gradient: "linear-gradient(135deg,#1c1917,#44403c,#78716c)"
+  },
+
+  // ── 17. SSO login loop (last support) ──
   {
     id: "s3", title: "SSO login loop after IdP certificate rotation",
     content_type: "support_reply", business_id: "b2", status: "pending",
