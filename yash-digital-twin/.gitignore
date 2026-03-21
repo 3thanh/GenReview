@@ -1,0 +1,7 @@
+# Large media files - stored locally only
+videos/
+audio/*.wav
+audio/concat_list.txt
+audio/filelist.txt
+assets/yash_voice_training_full.wav
+assets/yash_voice_30min_sample.wav
