@@ -55,7 +55,11 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     useImperativeHandle(ref, () => ({
       getCurrentTime: () => videoRef.current?.currentTime ?? 0,
       pause: () => {
-        videoRef.current?.pause();
+        const v = videoRef.current;
+        if (v) {
+          v.pause();
+          v.muted = true;
+        }
       },
     }));
 
@@ -72,6 +76,9 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       return () => {
         video.removeEventListener("timeupdate", onTime);
         video.removeEventListener("loadedmetadata", onMeta);
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
       };
     }, []);
 
@@ -95,10 +102,14 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             void video.play().catch(() => {});
           }
         });
-        return;
+      } else {
+        video.pause();
+        video.currentTime = video.currentTime;
       }
 
-      video.pause();
+      return () => {
+        video.pause();
+      };
     }, [card.video_url, isPlaying]);
 
     useEffect(() => {
