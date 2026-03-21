@@ -44,9 +44,8 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const videoRef = useRef<HTMLVideoElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [muted, setMuted] = useState(true);
+    const [muted, setMuted] = useState(false);
     const [volume, setVolume] = useState(0.8);
-    const unmutedOnce = useRef(false);
     const [fullscreen, setFullscreen] = useState(false);
     const [scriptOpen, setScriptOpen] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -83,27 +82,6 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       video.muted = muted;
       video.volume = volume;
     }, [muted, volume]);
-
-    useEffect(() => {
-      if (unmutedOnce.current) return;
-      const handler = () => {
-        const video = videoRef.current;
-        if (video && !video.paused) {
-          video.muted = false;
-          video.volume = volume;
-          setMuted(false);
-        }
-        unmutedOnce.current = true;
-        document.removeEventListener("click", handler, true);
-        document.removeEventListener("touchstart", handler, true);
-      };
-      document.addEventListener("click", handler, true);
-      document.addEventListener("touchstart", handler, true);
-      return () => {
-        document.removeEventListener("click", handler, true);
-        document.removeEventListener("touchstart", handler, true);
-      };
-    }, [volume]);
 
     useEffect(() => {
       const video = videoRef.current;
@@ -273,9 +251,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               src={card.video_url}
               className="h-full w-full object-contain"
               loop
-              muted
               playsInline
-              autoPlay
               poster={card.thumbnail_url ?? undefined}
             />
             {videoOverlay(false)}
