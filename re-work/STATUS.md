@@ -20,9 +20,10 @@
   - **A/V sync:** 26ms drift (well under 100ms threshold)
   - **Total duration:** 60.10s
 
-### 3. Current output
-- `output/clay_ads_v1.mp4` — 60s, 1280x720, 4.9 MB
-- Uses macOS TTS (Rishi voice) as placeholder — swap with ElevenLabs clone for final
+### 3. Current outputs
+- `output/clay_ads_v1.mp4` — 60s, 1280x720, 4.9 MB (Clay Ads script)
+- `output/terracotta_v1.mp4` — 60s, 1280x720, 3.4 MB (Terracotta Overview script)
+- Both use macOS TTS (Rishi voice) as placeholder — swap with ElevenLabs clone for final
 
 ---
 
@@ -51,10 +52,11 @@
 ```bash
 cd re-work
 
-# Build the video (uses macOS TTS as placeholder)
-python3 build_video.py
+# Build Clay Ads video
+python3 build_video.py         # -> output/clay_ads_v1.mp4
 
-# Output: output/clay_ads_v1.mp4
+# Build Terracotta Overview video
+python3 build_terracotta.py    # -> output/terracotta_v1.mp4
 ```
 
 ### With ElevenLabs voice clone
@@ -73,9 +75,12 @@ python3 build_video.py
 re-work/
 ├── SCRIPT.md              # Full 60s video script with timestamps
 ├── STATUS.md              # This file — where we left off
-├── build_video.py         # Main build pipeline (TTS → video → concat → QC)
+├── build_video.py         # Clay Ads build pipeline
+├── build_terracotta.py    # Terracotta Overview build pipeline
 ├── clone_voice.py         # ElevenLabs voice cloning
 ├── generate_avatar.py     # HeyGen avatar generation
+├── SCRIPT.md              # Clay Ads script
+├── SCRIPT_TERRACOTTA.md   # Terracotta Overview script
 ├── .gitignore
 ├── source_assets/         # All input assets
 │   ├── yash_headshot_0{1,2,3}.png
@@ -89,8 +94,9 @@ re-work/
 
 ---
 
-## QC Results (latest build)
+## QC Results (latest builds)
 
+### Clay Ads (`clay_ads_v1.mp4`)
 | Check | Result |
 |-------|--------|
 | Total duration | 60.10s |
@@ -100,3 +106,14 @@ re-work/
 | Demo segs | 2, 4, 6, 8 — Black screen w/ text |
 | Stat overlays | Seg 3: "60%+ Meta match rate", Seg 7: "5x lower cost per qualified lead" |
 | End card | Seg 8: "Clay Ads / always-on audiences" |
+
+### Terracotta Overview (`terracotta_v1.mp4`)
+| Check | Result |
+|-------|--------|
+| Total duration | 60.10s |
+| Segment drift | All < 12ms |
+| A/V sync | 21ms drift |
+| Talking head segs | 1, 5 — Yash on camera |
+| Demo segs | 2, 3, 4, 6 — Black screen w/ text |
+| Closing accent | Seg 6: "This is Terracotta." (gold) |
+| End card | Seg 6: "From Signal to Action to Outcome" |
