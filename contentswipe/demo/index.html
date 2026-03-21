@@ -255,8 +255,11 @@ body{
 .draft-response{
   margin:0 14px 14px;padding:12px 14px;
   background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.15);
-  border-radius:14px;flex-shrink:0;
+  border-radius:14px;flex-shrink:1;
+  max-height:40%;overflow-y:auto;
+  scrollbar-width:none;
 }
+.draft-response::-webkit-scrollbar{display:none}
 .draft-response .draft-label{
   display:flex;align-items:center;gap:6px;margin-bottom:8px;
   font-size:10px;color:var(--amber);font-weight:700;
@@ -467,51 +470,7 @@ const DEMO_CARDS = [
     gradient: "linear-gradient(135deg,#064e3b,#059669,#34d399)"
   },
 
-  // ── 3–4. LinkedIn leads ──
-  {
-    id: "v1", title: "Morning Ritual", content_type: "video_script",
-    business_id: "b1", status: "pending",
-    description: "Show the journey from bean to cup — a 15-second visual of beans being roasted, ground, and brewed into a perfect pour-over.",
-    script: "[OPEN: Close-up of raw green beans]\nVO: \"Every morning starts with a single bean.\"\n\n[CUT: Beans tumbling in roaster, golden smoke]\nSFX: gentle crackling, warm hum\n\n[CUT: Hand grinding fresh beans]\nVO: \"Ground fresh. Brewed slow.\"\n\n[CUT: Hot water spiraling over grounds]\nSFX: water pouring, ceramic resonance\n\n[CLOSE: Steam rising, sunrise background]\nVO: \"From farm to your morning. Acme Coffee Co.\"",
-    gradient: "linear-gradient(135deg,#4c1d95,#7c3aed,#a855f7)"
-  },
-  {
-    id: "v2", title: "Behind the Scenes: Roasting Day", content_type: "video_script",
-    business_id: "b1", status: "pending",
-    description: "Take viewers behind the scenes at the roastery. Show the team, the craft, the smell you can almost feel through the screen.",
-    script: "[OPEN: Door opening to roastery, warm light]\nVO: \"Not many people get to see this.\"\n\n[CUT: Roaster checking temperature dial]\nSFX: mechanical hum, beans shifting\n\n[CUT: Beans pouring out, crackling]\nVO: \"Every batch — a labor of love.\"\n\n[CUT: Team cupping session]\nSFX: slurping, quiet laughter\n\n[CLOSE: Bags stamped with Acme logo]\nVO: \"Taste the craft. Link in bio.\"",
-    gradient: "linear-gradient(135deg,#7c2d12,#c2410c,#ea580c)"
-  },
-  {
-    id: "v3", title: "Customer Reaction Challenge", content_type: "video_script",
-    business_id: "b1", status: "pending",
-    description: "Film real customers trying our new Ethiopian single-origin for the first time. Capture genuine surprise and delight.",
-    script: "[OPEN: Text 'We asked strangers to try our new roast']\nMusic: upbeat, feel-good\n\n[CUT: Person 1 sips, eyes widen]\n\"Wait, that's incredible.\"\n\n[CUT: Person 2 laughs]\n\"This doesn't taste like any coffee I've had.\"\n\n[CUT: Person 3]\n\"Where do I buy this?!\"\n\n[CLOSE: Acme logo + 'Link in bio']",
-    gradient: "linear-gradient(135deg,#166534,#16a34a,#4ade80)"
-  },
-  {
-    id: "v4", title: "Product Launch: Drift Analytics", content_type: "video_script",
-    business_id: "b2", status: "pending",
-    description: "Announce the new analytics dashboard with a fast-paced montage of the UI, data flowing, insights appearing.",
-    script: "[OPEN: Dark screen, cursor appears]\nVO: \"Your data has been trying to tell you something.\"\n\n[CUT: Dashboard loading, charts animate in]\nSFX: soft digital chime\n\n[CUT: Rapid montage — filters, drill-downs, exports]\nVO: \"Now you can finally listen.\"\n\n[CLOSE: Drift logo pulse]\nVO: \"Drift Analytics. See what you've been missing.\"",
-    gradient: "linear-gradient(135deg,#1e3a5f,#2563eb,#60a5fa)"
-  },
-  {
-    id: "v5", title: "Founder Story: Why We Built Drift", content_type: "video_script",
-    business_id: "b2", status: "pending",
-    description: "Authentic founder-led storytelling about the problem that inspired Drift and why existing solutions weren't cutting it.",
-    script: "[OPEN: Founder at desk, natural lighting]\nVO: \"I spent 3 years building reports nobody read.\"\n\n[CUT: Whiteboard sketches, early prototypes]\nVO: \"So I asked — what if the data came to you?\"\n\n[CUT: First customer reaction]\nSFX: notification ding\n\n[CLOSE: Product shot + team]\nVO: \"That's Drift. Built by people who were tired of dashboards.\"",
-    gradient: "linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)"
-  },
-  {
-    id: "v6", title: "Fall Collection Teaser", content_type: "video_script",
-    business_id: "b3", status: "pending",
-    description: "Moody, editorial teaser for the fall/winter collection. Think runway meets street style.",
-    script: "[OPEN: Slow pan across fabrics hanging]\nSFX: ambient drone, fabric rustling\n\n[CUT: Model walks through fog, silhouette]\nVO: \"Darkness is not the absence of light.\"\n\n[CUT: Close-up details — stitching, texture, buttons]\nSFX: clock ticking\n\n[CUT: Full look reveal, wind catches coat]\nVO: \"It's where you find yourself.\"\n\n[CLOSE: MAISON NOIR — Fall '26]\nSFX: deep bass hit",
-    gradient: "linear-gradient(135deg,#1c1917,#44403c,#78716c)"
-  },
-
-  // ── LinkedIn Posts ──
+  // ── 3. The 5am Coffee Myth (LinkedIn) ──
   {
     id: "l1", title: "The 5am Coffee Myth", content_type: "linkedin_post",
     business_id: "b1", status: "pending",
