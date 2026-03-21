@@ -36,7 +36,7 @@ BLUR_BG = (
 
 SCRIPTS = {
     "clay_ads": {
-        "output": "clay_ads_v4.mp4",
+        "output": "clay_ads_v5.mp4",
         "segments": [
             {"id": 1, "type": "head",
              "line": "Most teams are still uploading CSVs to run ads... and their targeting is outdated the second they hit upload."},
@@ -63,7 +63,7 @@ SCRIPTS = {
         ],
     },
     "terracotta": {
-        "output": "terracotta_v4.mp4",
+        "output": "terracotta_v5.mp4",
         "segments": [
             {"id": 1, "type": "head",
              "line": "Today, I want to show you something we've been building behind the scenes at Clay — Terracotta."},
@@ -147,11 +147,11 @@ def tts(text, out_path):
         headers={"xi-api-key": API_KEY, "Content-Type": "application/json"},
         json={
             "text": text,
-            "model_id": "eleven_multilingual_v2",
+            "model_id": "eleven_turbo_v2_5",
             "voice_settings": {
-                "stability": 0.75,
-                "similarity_boost": 0.80,
-                "style": 0.25,
+                "stability": 0.90,
+                "similarity_boost": 0.65,
+                "style": 0.0,
                 "use_speaker_boost": True,
             },
         },
