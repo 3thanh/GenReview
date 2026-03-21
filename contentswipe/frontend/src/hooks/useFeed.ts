@@ -18,6 +18,7 @@ interface SwipeAction {
   previousStatus: ReviewStatus;
   timestamp: number;
   cardSnapshot: ContentItem;
+  removedCards?: ContentItem[];
 }
 
 interface SessionStats {
@@ -40,6 +41,8 @@ interface UseFeedReturn {
   swipe: (direction: SwipeDirection, feedback?: string) => Promise<void>;
   undo: () => Promise<void>;
   reload: () => Promise<void>;
+  approvedPersonaIds: string[];
+  addBackgroundCard: (card: ContentItem) => void;
 }
 
 interface FeedCachePayload {
@@ -159,6 +162,7 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
   const undoStack = useRef<SwipeAction[]>([]);
   const seenIds = useRef(new Set<string>());
   const hydratedCacheIdentity = useRef(`${sourceMode}:${getPersonaCacheIdentity(persona)}`);
+  const [approvedPersonaIds, setApprovedPersonaIds] = useState<string[]>([]);
   const [stats, setStats] = useState<SessionStats>({
     totalSwiped: 0,
     approved: 0,
@@ -167,6 +171,13 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
     ideas: 0,
     undos: 0,
   });
+
+  const addBackgroundCard = useCallback((card: ContentItem) => {
+    setCards((prev) => {
+      if (prev.some((c) => c.id === card.id)) return prev;
+      return [...prev, card];
+    });
+  }, []);
 
   const fetchCards = useCallback(async (options?: { background?: boolean }) => {
     if (sourceMode === "demo") {
@@ -220,6 +231,7 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
     seenIds.current.clear();
     undoStack.current = [];
     setCards(cachedCards);
+    setApprovedPersonaIds([]);
     setStats({ totalSwiped: 0, approved: 0, rejected: 0, variants: 0, ideas: 0, undos: 0 });
     setLoading(sourceMode === "real" && cachedCards.length === 0);
     setError(null);
@@ -308,21 +320,52 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
       setError(null);
 
       if (sourceMode === "demo") {
-        if (direction === "left") {
+        const approvedPid = card.persona_id;
+
+        if (direction === "right" && approvedPid) {
+          const removedCards = cards.filter(
+            (c) => c.persona_id === approvedPid
+          );
+          undoStack.current.push({
+            cardId: card.id,
+            direction,
+            feedback,
+            previousStatus: card.review_status,
+            timestamp: Date.now(),
+            cardSnapshot: card,
+            removedCards,
+          });
+          if (undoStack.current.length > 50) undoStack.current.shift();
+
+          setApprovedPersonaIds((prev) =>
+            prev.includes(approvedPid) ? prev : [...prev, approvedPid]
+          );
+          setCards((prev) =>
+            prev.filter((c) => c.persona_id !== approvedPid)
+          );
+        } else if (direction === "left") {
+          undoStack.current.push({
+            cardId: card.id,
+            direction,
+            feedback,
+            previousStatus: card.review_status,
+            timestamp: Date.now(),
+            cardSnapshot: card,
+          });
+          if (undoStack.current.length > 50) undoStack.current.shift();
           setCards((prev) => [prev[prev.length - 1], ...prev.slice(0, -1)]);
         } else {
+          undoStack.current.push({
+            cardId: card.id,
+            direction,
+            feedback,
+            previousStatus: card.review_status,
+            timestamp: Date.now(),
+            cardSnapshot: card,
+          });
+          if (undoStack.current.length > 50) undoStack.current.shift();
           setCards((prev) => [...prev.slice(1), prev[0]]);
         }
-
-        undoStack.current.push({
-          cardId: card.id,
-          direction,
-          feedback,
-          previousStatus: card.review_status,
-          timestamp: Date.now(),
-          cardSnapshot: card,
-        });
-        if (undoStack.current.length > 50) undoStack.current.shift();
 
         setStats((s) => ({
           ...s,
@@ -403,10 +446,22 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
     if (!lastAction) return;
 
     if (sourceMode === "demo") {
-      setCards((prev) => {
-        const withoutLast = prev.filter((c) => c.id !== lastAction.cardId);
-        return [lastAction.cardSnapshot, ...withoutLast];
-      });
+      if (lastAction.removedCards?.length) {
+        const restoredIds = new Set(lastAction.removedCards.map((c) => c.id));
+        setCards((prev) => {
+          const withoutRestored = prev.filter((c) => !restoredIds.has(c.id));
+          return [...lastAction.removedCards!, ...withoutRestored];
+        });
+        const pid = lastAction.cardSnapshot.persona_id;
+        if (pid) {
+          setApprovedPersonaIds((prev) => prev.filter((id) => id !== pid));
+        }
+      } else {
+        setCards((prev) => {
+          const withoutLast = prev.filter((c) => c.id !== lastAction.cardId);
+          return [lastAction.cardSnapshot, ...withoutLast];
+        });
+      }
       setStats((s) => ({
         ...s,
         totalSwiped: Math.max(0, s.totalSwiped - 1),
@@ -469,6 +524,8 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
     swipe,
     undo,
     reload: fetchCards,
+    approvedPersonaIds,
+    addBackgroundCard,
   };
 }
 

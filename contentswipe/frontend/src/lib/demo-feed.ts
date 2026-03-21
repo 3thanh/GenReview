@@ -310,3 +310,28 @@ export function getSeededDemoCards(persona: Persona): ContentItem[] {
     .filter((card) => persona.contentTypes.includes(card.content_type))
     .map(cloneCard);
 }
+
+export function getDemoPersonaIds(): string[] {
+  const ids = new Set<string>();
+  for (const card of DEMO_CARDS) {
+    if (card.persona_id) ids.add(card.persona_id);
+  }
+  return Array.from(ids);
+}
+
+const PERSONA_VARIATION_PROMPTS: Record<string, string> = {
+  "airplane-ai": `Create a 15-20 second comedy skit video for TikTok/Reels featuring AI models (GPT-4, Claude, Gemini, Llama, Grok) personified as people in an absurd everyday scenario. Each model should react in-character based on their known personalities. Think "AI models at a job interview" or "AI models as roommates" or "AI models in a cooking competition." The tone is viral tech humor — punchy, visual, meme-worthy, with a strong punchline. Generate a DIFFERENT scenario from previous ones.`,
+
+  "cerebral-valley": `Create a 15-20 second fast-paced event promo / brand ad video for the Cerebral Valley AI builder community. Structure: hook (3s), credibility (4s), value prop (7s), CTA (3s). Show packed venues, hackathon energy, diverse builders, terminals, neural nets. Dark-mode tech aesthetic. Target: AI startup founders, engineers, VCs in SF Bay Area. Make it feel exclusive and high-energy. Try a fresh angle — maybe a "day in the life" or "what happens at CV" or "the builder's journey."`,
+
+  "pokemon-infomercial": `Create a 15-25 second ultra-serious dramatic infomercial treating a random Pokemon as a premium consumer product. Military-grade sincerity meets absurdist humor. Structure: problem → product reveal → features montage → testimonial → limited time offer → CTA. Choose a DIFFERENT Pokemon (try Magikarp, Snorlax, Jigglypuff, Ditto, Psyduck, Charizard, or Mewtwo). Dead-serious tone, premium production feel, as if this is a real QVC segment.`,
+
+  "coffee-roastery": `Create a 15-20 second product showcase / lifestyle reel for an artisan coffee brand. Smooth transitions between coffee-making steps and lifestyle moments. Show: beans, grinding, brewing, steam, morning light, packaging, people enjoying coffee. Warm color palette, morning ritual energy. LinkedIn/Instagram style. Target: coffee enthusiasts, specialty brew buyers 25-45. Try a different angle — cold brew, latte art, origin story, or seasonal blend.`,
+};
+
+export function getVariationPromptForPersona(persona: Persona): string {
+  return (
+    PERSONA_VARIATION_PROMPTS[persona.id] ??
+    `Create a 15-20 second video in this style: ${persona.videoType}. ${persona.description}. Target audience: ${persona.targetDemographic}. Generate a fresh variation with different content but the same tone and format.`
+  );
+}

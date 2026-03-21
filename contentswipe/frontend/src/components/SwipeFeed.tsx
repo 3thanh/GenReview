@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useFeed } from "../hooks/useFeed";
+import { useBackgroundGeneration } from "../hooks/useBackgroundGeneration";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { ContentCard } from "./ContentCard";
 import { ActionBar } from "./ActionBar";
@@ -74,7 +75,16 @@ export function SwipeFeed({
     queueLength,
     swipe,
     undo,
+    approvedPersonaIds,
+    addBackgroundCard,
   } = useFeed(persona, feedSourceMode);
+
+  useBackgroundGeneration(
+    feedSourceMode === "demo",
+    personas,
+    approvedPersonaIds,
+    addBackgroundCard
+  );
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingDirection, setPendingDirection] =
