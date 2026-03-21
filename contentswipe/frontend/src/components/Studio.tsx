@@ -634,7 +634,7 @@ export function Studio({
   };
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] bg-[linear-gradient(180deg,rgba(255,255,255,0.26),rgba(255,255,255,0.12))]">
+    <div className="flex h-[calc(100vh-9rem)] bg-[linear-gradient(180deg,rgba(255,255,255,0.26),rgba(255,255,255,0.12))]">
       {sidebarOpen && (
         <div className="flex w-80 flex-col border-r border-slate-200/80 bg-white/48 backdrop-blur-xl xl:w-96">
           <div className="border-b border-slate-200/80 p-4">
@@ -1091,7 +1091,7 @@ export function Studio({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex flex-col border-t border-slate-200/80 bg-white/44 backdrop-blur-xl" style={{ maxHeight: "60vh" }}>
+        <div className="flex flex-col border-t border-slate-200/80 bg-white/44 backdrop-blur-xl" style={{ maxHeight: "48vh" }}>
           <div className="flex-1 overflow-y-auto min-h-0 px-6 pt-4 pb-1">
           {activePersona && (
             <div className="mb-3 overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/60 backdrop-blur-md">
@@ -1180,7 +1180,7 @@ export function Studio({
               </button>
 
               {configExpanded && (
-                <div className="max-h-[42vh] space-y-4 overflow-y-auto border-t border-slate-200/60 px-4 py-4">
+                <div className="space-y-4 overflow-y-auto border-t border-slate-200/60 px-4 py-4">
                   {/* Target Use */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
