@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useImperativeHandle, forwardRef } from "react";
-import { Headphones, Bot, User, ChevronUp, ChevronDown, AlertCircle } from "lucide-react";
+import { Headphones, Bot, User, ChevronUp, ChevronDown, AlertCircle, AlertTriangle, Clock, UserCheck, MessageSquare, Send } from "lucide-react";
 import type { ContentItem } from "../types/database";
 
 export interface ConversationMessage {
@@ -19,12 +19,24 @@ export interface ConversationData {
   ticket_ref?: string;
 }
 
+export interface IntercomState {
+  conversation_id?: string;
+  last_fetched_at?: string;
+  message_count_at_cache?: number;
+  conversation_updated_at?: number;
+  assignee_at_cache?: string | null;
+  dust_conversation_id?: string | null;
+  sent_at?: string;
+  sent_as?: string;
+}
+
 export interface SupportCardHandle {
   scrollChat: (direction: "up" | "down") => void;
 }
 
 interface SupportCardProps {
   card: ContentItem;
+  onSendReply?: (id: string, messageType: "comment" | "note") => void;
 }
 
 function formatTime(ts?: string) {
@@ -41,6 +53,77 @@ function getConversation(card: ContentItem): ConversationData | null {
     return null;
   }
   return meta.conversation as ConversationData;
+}
+
+function getIntercomState(card: ContentItem): IntercomState | null {
+  const meta = card.metadata as Record<string, any> | null;
+  return (meta?.intercom_state as IntercomState) ?? null;
+}
+
+function StaleBanner({ intercomState }: { intercomState: IntercomState }) {
+  const cachedAt = intercomState.last_fetched_at;
+  if (!cachedAt) return null;
+
+  const cachedDate = new Date(cachedAt);
+  const ageMs = Date.now() - cachedDate.getTime();
+  const ageMinutes = Math.floor(ageMs / 60_000);
+
+  if (intercomState.sent_at) {
+    return (
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+        <Send className="h-3.5 w-3.5 text-emerald-600" />
+        <span className="text-[11px] font-medium text-emerald-700">
+          Sent as {intercomState.sent_as === "note" ? "internal note" : "reply"}{" "}
+          {new Date(intercomState.sent_at).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </span>
+      </div>
+    );
+  }
+
+  if (ageMinutes < 2) return null;
+
+  return (
+    <div className="mb-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2">
+      <Clock className="h-3.5 w-3.5 text-amber-500" />
+      <span className="text-[11px] text-amber-700">
+        Draft cached {ageMinutes < 60 ? `${ageMinutes}m ago` : `${Math.floor(ageMinutes / 60)}h ago`}
+        {intercomState.message_count_at_cache != null && (
+          <> — {intercomState.message_count_at_cache} messages at cache time</>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function SendModeToggle({
+  mode,
+  onToggle,
+}: {
+  mode: "comment" | "note";
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      {mode === "comment" ? (
+        <>
+          <MessageSquare className="h-3 w-3" />
+          <span>Reply to customer</span>
+        </>
+      ) : (
+        <>
+          <UserCheck className="h-3 w-3" />
+          <span>Internal note</span>
+        </>
+      )}
+    </button>
+  );
 }
 
 function ConfidenceBadge({ value }: { value: number }) {
@@ -60,17 +143,21 @@ function ConfidenceBadge({ value }: { value: number }) {
 }
 
 export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
-  function SupportCard({ card }, ref) {
+  function SupportCard({ card, onSendReply }, ref) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
+    const [sendMode, setSendMode] = useState<"comment" | "note">("comment");
 
     const conversation = getConversation(card);
+    const intercomState = getIntercomState(card);
+    const isIntercomTicket = !!intercomState?.conversation_id;
     const customer = conversation?.customer;
     const messages = conversation?.messages ?? [];
     const draftReply = card.body_text;
     const sourceRef = card.source_ref;
     const channel = card.channel ?? conversation?.channel ?? "intercom";
+    const isFailed = card.generation_status === "failed";
 
     const scrollConversation = (direction: "up" | "down") => {
       if (!scrollRef.current) return;
@@ -133,6 +220,19 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col pr-1">
+          {isIntercomTicket && intercomState && (
+            <StaleBanner intercomState={intercomState} />
+          )}
+
+          {isFailed && (
+            <div className="mb-3 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
+              <span className="text-[11px] font-medium text-rose-600">
+                Draft generation failed — will retry on next poll
+              </span>
+            </div>
+          )}
+
           {hasThread ? (
             <div className="relative mb-4 min-h-0 flex-1">
               {canScrollUp && (
@@ -181,15 +281,37 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
 
           {draftReply && (
             <div className="relative rounded-[24px] border border-amber-200 bg-amber-50/80 p-4 lg:p-5">
-              <div className="mb-3 flex items-center gap-1.5">
-                <Bot className="h-3.5 w-3.5 text-amber-600" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">
-                  AI Draft Review
-                </span>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Bot className="h-3.5 w-3.5 text-amber-600" />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700">
+                    AI Draft {isIntercomTicket ? (sendMode === "comment" ? "Reply" : "Note") : "Review"}
+                  </span>
+                </div>
+                {isIntercomTicket && !intercomState?.sent_at && (
+                  <SendModeToggle
+                    mode={sendMode}
+                    onToggle={() =>
+                      setSendMode((m) => (m === "comment" ? "note" : "comment"))
+                    }
+                  />
+                )}
               </div>
               <p className="whitespace-pre-wrap text-[14px] leading-8 text-slate-700 lg:text-[15px]">
                 {draftReply}
               </p>
+              {isIntercomTicket && onSendReply && !intercomState?.sent_at && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => onSendReply(card.id, sendMode)}
+                    className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-amber-700"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Send {sendMode === "comment" ? "Reply" : "Note"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

@@ -601,6 +601,39 @@ export async function uploadContent(params: {
   return data;
 }
 
+// ── Intercom support actions ────────────────────────────────────
+
+export async function approveAndSendIntercom(
+  id: string,
+  options: {
+    messageType?: "comment" | "note";
+    forceEvenIfStale?: boolean;
+  } = {}
+): Promise<{
+  success: boolean;
+  error?: string;
+  preflightIssues?: Array<{ type: string; [key: string]: unknown }>;
+}> {
+  // Dynamic import to avoid loading intercom deps when not needed
+  const { sendApprovedReply } = await import(
+    "../pipeline/intercom-sender.js"
+  );
+  return sendApprovedReply(id, options);
+}
+
+export async function fetchPendingIntercomDrafts(): Promise<ContentItem[]> {
+  const { data, error } = await supabase
+    .from("content_items")
+    .select("*")
+    .eq("content_type", "support")
+    .eq("channel", "intercom")
+    .eq("review_status", "pending")
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(`Failed to fetch intercom drafts: ${error.message}`);
+  return data ?? [];
+}
+
 // ── Analytics ───────────────────────────────────────────────────
 
 export async function fetchFeedStats(businessId?: string): Promise<FeedStats> {

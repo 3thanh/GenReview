@@ -8,6 +8,7 @@
     "feedback": "tsx src/pipeline/feedback-loop.ts",
     "seed": "tsx src/scripts/seed-test-content.ts",
     "seed:support": "tsx src/scripts/seed-support-threads.ts",
+    "intercom": "tsx src/pipeline/intercom-worker.ts",
     "generate:clay-ads": "tsx src/scripts/generate-clay-ads.ts",
     "generate:clay-ads-hari": "tsx src/scripts/generate-clay-ads-hari.ts",
     "typecheck": "tsc --noEmit",
