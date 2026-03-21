@@ -28,7 +28,7 @@ W, H = 1280, 720
 
 SCRIPTS = {
     "clay_ads": {
-        "output": "clay_ads_v2.mp4",
+        "output": "clay_ads_v3.mp4",
         "segments": [
             {"id": 1, "type": "head",
              "line": "Most teams are still uploading CSVs to run ads... and their targeting is outdated the second they hit upload."},
@@ -55,7 +55,7 @@ SCRIPTS = {
         ],
     },
     "terracotta": {
-        "output": "terracotta_v2.mp4",
+        "output": "terracotta_v3.mp4",
         "segments": [
             {"id": 1, "type": "head",
              "line": "Today, I want to show you something we've been building behind the scenes at Clay — Terracotta."},
@@ -154,7 +154,7 @@ def tts(text, out_path):
     mp3 = out_path + ".mp3"
     with open(mp3, "wb") as f:
         f.write(resp.content)
-    run(["ffmpeg", "-y", "-i", mp3, "-ar", "44100", "-ac", "1", out_path])
+    run(["ffmpeg", "-y", "-i", mp3, "-ar", "44100", "-ac", "2", out_path])
     os.remove(mp3)
     return True
 
@@ -210,12 +210,13 @@ def build_script(name, config):
                     "-ss", str(head_offset), "-t", str(dur), "-i", TALKING_HEAD,
                     "-i", stat_png,
                     "-i", wav,
-                    "-filter_complex", f"[0:v][1:v]overlay=0:{H - 60}[vout]",
+                    "-filter_complex",
+                    f"[0:v]scale={W}:{H},setsar=1[sv];[sv][1:v]overlay=0:{H - 60}[vout]",
                     "-map", "[vout]", "-map", "2:a",
                     "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                    "-c:a", "aac", "-b:a", "128k",
-                    "-r", "24000/1001", "-s", f"{W}x{H}",
-                    "-shortest",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "192k", "-ac", "2",
+                    "-r", "24", "-t", str(dur),
                     vid,
                 ])
             else:
@@ -225,14 +226,15 @@ def build_script(name, config):
                     "-i", wav,
                     "-map", "0:v", "-map", "1:a",
                     "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-                    "-c:a", "aac", "-b:a", "128k",
-                    "-r", "24000/1001", "-s", f"{W}x{H}",
-                    "-shortest",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "192k", "-ac", "2",
+                    "-r", "24", "-s", f"{W}x{H}",
+                    "-t", str(dur),
                     vid,
                 ])
-            head_offset += min(dur, 8)  # advance but keep within 60s source
+            head_offset += dur
             if head_offset > 50:
-                head_offset = 2  # loop back
+                head_offset = 2
         else:
             print(f"    Seg {i}: demo ({dur:.2f}s)")
             frame = os.path.join(work, f"demo_{i}.png")
@@ -242,14 +244,14 @@ def build_script(name, config):
                          stat=seg.get("stat"))
             run([
                 "ffmpeg", "-y",
-                "-loop", "1", "-framerate", "24000/1001",
+                "-loop", "1", "-framerate", "24",
                 "-t", str(dur), "-i", frame,
                 "-i", wav,
                 "-map", "0:v", "-map", "1:a",
                 "-c:v", "libx264", "-preset", "fast", "-crf", "18",
                 "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "128k",
-                "-shortest",
+                "-c:a", "aac", "-b:a", "192k", "-ac", "2",
+                "-t", str(dur),
                 vid,
             ])
 
@@ -261,12 +263,20 @@ def build_script(name, config):
             f.write(f"file 'video_{seg['id']}.mp4'\n")
 
     final = os.path.join(OUTPUT_DIR, out_name)
+    concat_tmp = final + ".tmp.mp4"
     run([
         "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat,
-        "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-        "-c:a", "aac", "-b:a", "128k",
+        "-c", "copy",
+        concat_tmp,
+    ])
+    run([
+        "ffmpeg", "-y", "-i", concat_tmp,
+        "-c:v", "copy",
+        "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+        "-c:a", "aac", "-b:a", "192k", "-ac", "2",
         final,
     ])
+    os.remove(concat_tmp)
 
     # Step 4: QC
     print(f"\n  --- QC ---")
@@ -276,7 +286,6 @@ def build_script(name, config):
     print(f"    Size:     {size_mb:.1f} MB")
 
     for seg in segments:
-        vid = os.path.join(work, f"video_{i}.mp4")
         label = "HEAD" if seg["type"] == "head" else "DEMO"
         print(f"    Seg {seg['id']} [{label}] {seg['actual_dur']:.2f}s")
 
