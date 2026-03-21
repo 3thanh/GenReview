@@ -126,6 +126,8 @@ export function SwipeFeed({
   const performSwipe = useCallback(
     (direction: SwipeDirection) => {
       if (!currentCard || swiping) return;
+      videoCardRef.current?.pause();
+      setIsPlaying(false);
       setSwiping(true);
       setExitDirection(direction);
       window.setTimeout(() => {
@@ -238,7 +240,7 @@ export function SwipeFeed({
         </div>
       )}
 
-      <div className="flex flex-1 items-center justify-center overflow-hidden px-3 pb-3 sm:px-6 lg:px-8">
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden px-3 pb-3 sm:px-6 lg:px-8">
         {!currentCard && !loading ? (
           <EmptyState
             persona={persona}
@@ -255,7 +257,7 @@ export function SwipeFeed({
                 animate="center"
                 exit="exit"
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="flex h-full items-center justify-center"
+                className="flex h-full w-full items-center justify-center overflow-hidden"
               >
                 <ContentCard
                   videoRef={videoCardRef}
