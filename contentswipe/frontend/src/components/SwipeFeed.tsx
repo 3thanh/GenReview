@@ -113,6 +113,20 @@ export function SwipeFeed({
     if (isPlaying) setIsPlaying(false);
   }, [isPlaying]);
 
+  const performSwipe = useCallback(
+    (direction: SwipeDirection) => {
+      if (!currentCard || swiping) return;
+      setSwiping(true);
+      setExitDirection(direction);
+      window.setTimeout(() => {
+        void swipe(direction);
+        setSwiping(false);
+        setExitDirection(null);
+      }, 250);
+    },
+    [currentCard, swiping, swipe]
+  );
+
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {
       if (!currentCard || swiping) return;
@@ -122,16 +136,17 @@ export function SwipeFeed({
         setDrawerOpen(true);
         return;
       }
-
-      setSwiping(true);
-      setExitDirection(direction);
-      window.setTimeout(() => {
-        void swipe(direction);
-        setSwiping(false);
-        setExitDirection(null);
-      }, 250);
+      performSwipe(direction);
     },
-    [captureVideoTimestamp, currentCard, persona, swiping, swipe]
+    [captureVideoTimestamp, currentCard, persona, swiping, performSwipe]
+  );
+
+  const handleKeyboardSwipe = useCallback(
+    (direction: SwipeDirection) => {
+      if (!currentCard || swiping) return;
+      performSwipe(direction);
+    },
+    [currentCard, swiping, performSwipe]
   );
 
   const handleFeedbackSubmit = useCallback(
@@ -193,7 +208,7 @@ export function SwipeFeed({
   );
 
   useKeyboard({
-    onSwipe: handleSwipe,
+    onSwipe: handleKeyboardSwipe,
     onUndo: undo,
     onStartTyping: handleStartTyping,
     onTogglePlay: handleTogglePlay,
