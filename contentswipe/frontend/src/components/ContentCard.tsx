@@ -3,9 +3,6 @@ import { Star } from "lucide-react";
 import type { ContentItem } from "../types/database";
 import { VideoCard } from "./VideoCard";
 import type { VideoCardHandle } from "./VideoCard";
-import { SocialCard } from "./SocialCard";
-import { SupportCard } from "./SupportCard";
-import type { SupportCardHandle } from "./SupportCard";
 
 interface ContentCardProps {
   card: ContentItem;
@@ -14,47 +11,27 @@ interface ContentCardProps {
   videoRef?: React.Ref<VideoCardHandle>;
 }
 
-export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
-  function ContentCard({ card, isPlaying, onTogglePlay, videoRef }, ref) {
-    const typeLabel = {
-      video: "Video",
-      social: "Social",
-      support: "Support",
-    }[card.content_type];
-
-    const typeBadgeColor = {
-      video: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-      social: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      support: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    }[card.content_type];
-
-    const frameWidthClass =
-      card.content_type === "support"
-        ? "max-w-[min(96vw,1320px)]"
-        : "max-w-[min(92vw,980px)]";
-
+export const ContentCard = forwardRef<unknown, ContentCardProps>(
+  function ContentCard({ card, isPlaying, onTogglePlay, videoRef }) {
     return (
-      <div className={`mx-auto flex h-full w-full ${frameWidthClass}`}>
-        <div className="flex h-full max-h-[calc(100vh-12rem)] w-full flex-col overflow-hidden rounded-[28px] border border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/50">
-          {/* Type badge + starred + channel */}
-          <div className="flex items-center justify-between px-5 pt-4 pb-2 lg:px-6">
+      <div className="mx-auto flex h-full w-full max-w-[min(92vw,980px)]">
+        <div className="surface-card flex h-full max-h-[calc(100vh-13rem)] w-full flex-col overflow-hidden rounded-[28px]">
+          <div className="flex items-center justify-between border-b border-slate-200/80 px-5 pb-3 pt-4 lg:px-6">
             <div className="flex items-center gap-2">
-              <span
-                className={`text-xs font-medium px-2.5 py-1 rounded-full border ${typeBadgeColor}`}
-              >
-                {typeLabel}
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full border border-sky-200 bg-sky-50 text-sky-700">
+                Video
               </span>
               {card.channel && (
-                <span className="text-[10px] text-zinc-500 capitalize">
+                <span className="text-[10px] capitalize text-slate-400">
                   {card.channel}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2">
               {card.starred && (
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
               )}
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-slate-400">
                 {card.created_at
                   ? new Date(card.created_at).toLocaleDateString("en-US", {
                       month: "short",
@@ -67,22 +44,16 @@ export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
             </div>
           </div>
 
-          {/* Card content by type */}
-          {card.content_type === "video" && (
-            <VideoCard
-              ref={videoRef}
-              card={card}
-              isPlaying={isPlaying}
-              onTogglePlay={onTogglePlay}
-            />
-          )}
-          {card.content_type === "social" && <SocialCard card={card} />}
-          {card.content_type === "support" && <SupportCard ref={ref} card={card} />}
+          <VideoCard
+            ref={videoRef}
+            card={card}
+            isPlaying={isPlaying}
+            onTogglePlay={onTogglePlay}
+          />
 
-          {/* Variant / lineage indicator */}
           {(card.variant_of || card.parent_id) && (
             <div className="px-5 pb-3 lg:px-6">
-              <span className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 3v12" /><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                   <path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />

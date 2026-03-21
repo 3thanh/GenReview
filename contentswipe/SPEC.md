@@ -40,15 +40,15 @@ Each content item is: **source-aware**, **channel-aware**, **reviewable**, **edi
 - Routing between views
 - Filtering by persona/view
 
-### 1.2 Content Types (all in v1)
+### 1.2 Content Types (V1 = video only)
 
-All three content types are supported:
+Only video content is in V1 scope. Support (Intercom tickets) is V2. Social is V3.
 
-| Type | Primary Asset | Notes |
-|------|--------------|-------|
-| **Support** | Screenshot | Represents support response context (Intercom-style). Do NOT assume text-first. |
-| **Social** | Text | User-defined channel (LinkedIn, etc.). Text-first but flexible. |
-| **Video** | Script / concept / render | May not always have final video yet. Script → render state progression. |
+| Type | Primary Asset | Version | Notes |
+|------|--------------|---------|-------|
+| **Video** | Script / concept / render | V1 | May not always have final video yet. Script → render state progression. |
+| **Support** | Screenshot / thread | V2 | Intercom ticket storage and review. |
+| **Social** | Text | V3 | User-defined channel (LinkedIn, etc.). Text-first but flexible. |
 
 ### 1.3 Generation Behavior
 
@@ -548,69 +548,73 @@ When the user describes content and hits send:
 
 ---
 
-## 14. What Is Explicitly Out of Scope (V2)
+## 14. V2 — Intercom Ticket Storage
+
+Store and surface Intercom support tickets as a content source for video generation.
+
+### 14.1 What V2 Includes
+
+- Intercom API integration for ingesting tickets
+- Support ticket data model (`content_type: "support"`, `channel: "intercom"`)
+- Support card UI with conversation threads and AI draft review
+- Support Agent persona
+- Ticket-to-video pipeline: use ticket context to generate explainer/response videos
+
+### 14.2 What V2 Does NOT Include
+
+- Social content type (deferred to V3)
+- Multi-view feed or routing
+
+---
+
+## 15. V3 — Explicitly Out of Scope
 
 These should NOT be built now, but system should remain compatible.
 
-### 14.1 Multi-View Feed
+### 15.1 Social Content Type
+
+Social posts (LinkedIn, Twitter, etc.) with text-first cards and channel-specific formatting.
+
+### 15.2 Multi-View Feed
 
 Future model:
 - Center = all content
 - Left/right = filtered views (support, social, etc.)
 - Horizontal swipe between views
 
-**Out of scope:** view switching, lane navigation, mutually exclusive card routing.
+### 15.3 View System
 
-### 14.2 View System
+Views defined by filters, possibly user-configurable, possibly stored in backend.
 
-Future: views defined by filters, possibly user-configurable, possibly stored in backend.
+### 15.4 Persona-Driven Routing
 
-**Out of scope:** views table, view definitions, view routing logic.
+Personas define generation behavior, view grouping, review modes.
 
-### 14.3 Persona-Driven Routing
+### 15.5 Advanced Review Modes
 
-Future: personas define generation behavior, view grouping, review modes.
-
-**Out of scope:** using personas to filter feed, persona-based queues.
-
-### 14.4 Advanced Review Modes
-
-Future:
 - Support QA mode (conversation + draft response)
 - Social review mode (hook, CTA, formatting)
 - Video staged review (script → render)
 
-**Out of scope:** specialized review UI logic in backend.
+### 15.6 Batch Actions
 
-### 14.5 Batch Actions
+Approve multiple, filter + bulk review.
 
-Future: approve multiple, filter + bulk review.
+### 15.7 Undo System
 
-**Out of scope now.**
+Undo toast or stack (but `review_events` helps later).
 
-### 14.6 Undo System
+### 15.8 Advanced Generation Controls
 
-Future: undo toast or stack.
+Strict vs creative, prompt adherence, seed consistency, variant controls.
 
-**Out of scope:** full undo system (but `review_events` helps later).
+### 15.9 Brand / Style Kit System
 
-### 14.7 Advanced Generation Controls
+Reusable brand context, tone rules, banned phrases.
 
-Future: strict vs creative, prompt adherence, seed consistency, variant controls.
+### 15.10 Configurable Views / Tabs in UI
 
-**Out of scope** in backend unless already partially implemented.
-
-### 14.8 Brand / Style Kit System
-
-Future: reusable brand context, tone rules, banned phrases.
-
-**Out of scope now** (but leave room in metadata).
-
-### 14.9 Configurable Views / Tabs in UI
-
-Future: tabs created in setup page, each tab = view, mutually exclusive card assignment.
-
-**Out of scope now.**
+Tabs created in setup page, each tab = view, mutually exclusive card assignment.
 
 ---
 

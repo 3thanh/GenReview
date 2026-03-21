@@ -4,13 +4,10 @@ import {
   Plus,
   Loader2,
   Video,
-  FileText,
-  Headphones,
   ChevronRight,
   ChevronDown,
   Sparkles,
   Layers,
-  Share2,
   Check,
   Settings2,
   Film,
@@ -61,10 +58,8 @@ const DEFAULT_BUSINESS: BusinessInsert = {
   description: "Default workspace for local review flows",
 };
 
-const DEFAULT_CHANNEL_BY_TYPE: Record<ContentType, string> = {
+const DEFAULT_CHANNEL_BY_TYPE: Partial<Record<ContentType, string>> = {
   video: "tiktok",
-  social: "linkedin",
-  support: "intercom",
 };
 
 const TYPE_OPTIONS: Array<{
@@ -73,8 +68,6 @@ const TYPE_OPTIONS: Array<{
   icon: typeof Video;
 }> = [
   { value: "video", label: "Video", icon: Video },
-  { value: "social", label: "Social", icon: FileText },
-  { value: "support", label: "Support", icon: Headphones },
 ];
 
 // ── Video Generation Config ─────────────────────────────────────────────
@@ -238,15 +231,11 @@ const PERSONA_ICON_OPTIONS: Array<{
   icon: typeof Video;
 }> = [
   { value: "video", label: "Video", icon: Video },
-  { value: "headset", label: "Support", icon: Headphones },
-  { value: "share", label: "Social", icon: Share2 },
   { value: "layers", label: "Everything", icon: Layers },
 ];
 
 const PERSONA_ICONS: Record<Persona["icon"], typeof Layers> = {
   video: Video,
-  headset: Headphones,
-  share: Share2,
   layers: Layers,
 };
 
@@ -511,7 +500,7 @@ export function Studio({
         business_id: businessId,
         session_id: activeSession.id,
         content_type: contentType,
-        channel: DEFAULT_CHANNEL_BY_TYPE[contentType],
+        channel: DEFAULT_CHANNEL_BY_TYPE[contentType] ?? "tiktok",
         review_mode: contentType,
         review_status: "pending",
         source_type: "generated",
@@ -547,12 +536,7 @@ export function Studio({
 
       if (jobErr) throw new Error(jobErr.message);
 
-      const typeLabel =
-        contentType === "video"
-          ? "video"
-          : contentType === "social"
-            ? "social post"
-            : "support reply";
+      const typeLabel = "video";
 
       addMessage({
         role: "system",
@@ -954,11 +938,7 @@ export function Studio({
               >
                 {message.contentType && message.role === "user" && (
                   <span className="mb-1 block text-[11px] uppercase tracking-wider opacity-60">
-                    {message.contentType === "video"
-                      ? "Video"
-                      : message.contentType === "social"
-                        ? "Social"
-                        : "Support"}
+                    Video
                   </span>
                 )}
                 <p className="whitespace-pre-wrap">{message.content}</p>

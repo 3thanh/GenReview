@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, Loader2, Film, Share2, Headphones, Linkedin, AtSign } from "lucide-react";
+import { AlertCircle, Loader2, Film } from "lucide-react";
 import { useFeed } from "../hooks/useFeed";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { ContentCard } from "./ContentCard";
@@ -9,7 +9,6 @@ import { FeedbackDrawer } from "./FeedbackDrawer";
 import { EmptyState } from "./EmptyState";
 import { FeedSourceToggle } from "./FeedSourceToggle";
 import { PersonaSwitcher } from "./PersonaSwitcher";
-import type { SupportCardHandle } from "./SupportCard";
 import type { VideoCardHandle } from "./VideoCard";
 import type { FeedSourceMode } from "../lib/feed-source";
 import type { ContentItem, SwipeDirection } from "../types/database";
@@ -49,32 +48,6 @@ function formatTimestamp(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-const TYPE_CONFIG = {
-  video: {
-    Icon: Film,
-    label: "Video",
-    badgeColor: "border-sky-200 bg-sky-50 text-sky-700",
-    accentGradient: "from-sky-100 via-white to-indigo-50",
-  },
-  social: {
-    Icon: Share2,
-    label: "Social",
-    badgeColor: "border-blue-200 bg-blue-50 text-blue-700",
-    accentGradient: "from-cyan-100 via-white to-blue-50",
-  },
-  support: {
-    Icon: Headphones,
-    label: "Support",
-    badgeColor: "border-amber-200 bg-amber-50 text-amber-700",
-    accentGradient: "from-amber-50 via-white to-orange-50",
-  },
-} as const;
-
-const CHANNEL_ICON_MAP: Record<string, typeof Linkedin> = {
-  linkedin: Linkedin,
-  twitter: AtSign,
-};
-
 function FeedPreviewSlice({
   card,
   side,
@@ -83,11 +56,8 @@ function FeedPreviewSlice({
   side: "left" | "right";
 }) {
   const previewImage = card.image_url ?? card.thumbnail_url ?? null;
-  const config = TYPE_CONFIG[card.content_type];
-  const TypeIcon = config.Icon;
   const roundClass =
     side === "left" ? "rounded-l-[28px] rounded-r-2xl" : "rounded-r-[28px] rounded-l-2xl";
-  const ChannelIcon = card.channel ? CHANNEL_ICON_MAP[card.channel] ?? Share2 : null;
 
   return (
     <div
@@ -105,9 +75,9 @@ function FeedPreviewSlice({
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
           </div>
         ) : (
-          <div className={`relative flex h-[45%] w-full shrink-0 items-center justify-center bg-gradient-to-br ${config.accentGradient}`}>
+          <div className="relative flex h-[45%] w-full shrink-0 items-center justify-center bg-gradient-to-br from-sky-100 via-white to-indigo-50">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/70 ring-1 ring-white/80">
-              <TypeIcon className="h-5 w-5 text-slate-500" />
+              <Film className="h-5 w-5 text-slate-500" />
             </div>
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
           </div>
@@ -116,14 +86,9 @@ function FeedPreviewSlice({
         <div className="flex flex-1 flex-col justify-between p-3">
           <div>
             <div className="mb-2 flex items-center gap-1.5">
-              <span
-                className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${config.badgeColor}`}
-              >
-                {config.label}
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border border-sky-200 bg-sky-50 text-sky-700">
+                Video
               </span>
-              {ChannelIcon && (
-                <ChannelIcon className="h-3 w-3 text-slate-400" />
-              )}
             </div>
             <p className="line-clamp-3 text-xs font-semibold leading-snug text-slate-700">
               {card.title}
@@ -166,11 +131,8 @@ export function SwipeFeed({
   const [videoTimestamp, setVideoTimestamp] = useState<number | null>(null);
   const [drawerInitialText, setDrawerInitialText] = useState("");
 
-  const supportCardRef = useRef<SupportCardHandle>(null);
   const videoCardRef = useRef<VideoCardHandle>(null);
 
-  const isSupport = currentCard?.content_type === "support";
-  const isVideo = currentCard?.content_type === "video";
   const leftPreviewCard = cards[1] ?? cards[2] ?? null;
   const rightPreviewCard = cards[2] ?? cards[1] ?? null;
 
@@ -180,8 +142,8 @@ export function SwipeFeed({
     setDrawerOpen(false);
     setDrawerInitialText("");
     setVideoTimestamp(null);
-    setIsPlaying(currentCard?.content_type === "video");
-  }, [currentCard?.id, currentCard?.content_type]);
+    setIsPlaying(true);
+  }, [currentCard?.id]);
 
   const statCards = [
     {
@@ -207,15 +169,11 @@ export function SwipeFeed({
   ];
 
   const captureVideoTimestamp = useCallback(() => {
-    if (!isVideo) {
-      setVideoTimestamp(null);
-      return;
-    }
     const time = videoCardRef.current?.getCurrentTime() ?? null;
     setVideoTimestamp(time);
     videoCardRef.current?.pause();
     if (isPlaying) setIsPlaying(false);
-  }, [isVideo, isPlaying]);
+  }, [isPlaying]);
 
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {
@@ -238,20 +196,13 @@ export function SwipeFeed({
     [captureVideoTimestamp, currentCard, persona, swiping, swipe]
   );
 
-  const handleScrollChat = useCallback(
-    (direction: "up" | "down") => {
-      supportCardRef.current?.scrollChat(direction);
-    },
-    []
-  );
-
   const handleFeedbackSubmit = useCallback(
     (feedback: string) => {
       if (!pendingDirection) return;
       setDrawerOpen(false);
 
       let finalFeedback = feedback;
-      if (videoTimestamp !== null && isVideo) {
+      if (videoTimestamp !== null) {
         finalFeedback = `[@${formatTimestamp(videoTimestamp)}] ${feedback}`;
       }
 
@@ -265,7 +216,7 @@ export function SwipeFeed({
         setVideoTimestamp(null);
       }, 250);
     },
-    [pendingDirection, swipe, videoTimestamp, isVideo]
+    [pendingDirection, swipe, videoTimestamp]
   );
 
   const handleFeedbackCancel = useCallback(() => {
@@ -292,8 +243,8 @@ export function SwipeFeed({
     onUndo: undo,
     onStartTyping: handleStartTyping,
     onTogglePlay: handleTogglePlay,
-    onScrollChat: handleScrollChat,
-    chatScrollActive: isSupport,
+    onScrollChat: () => {},
+    chatScrollActive: false,
     enabled: !drawerOpen,
   });
 
@@ -307,7 +258,7 @@ export function SwipeFeed({
 
   return (
     <div className="flex h-[calc(100vh-5rem)] flex-col">
-      <div className="relative z-20 flex items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <FeedSourceToggle value={feedSourceMode} onChange={onChangeFeedSourceMode} />
           <PersonaSwitcher
@@ -362,7 +313,6 @@ export function SwipeFeed({
                   className="flex h-full min-w-0 flex-1 items-stretch justify-center px-1.5"
                 >
                   <ContentCard
-                    ref={supportCardRef}
                     videoRef={videoCardRef}
                     card={currentCard}
                     isPlaying={isPlaying}
@@ -402,24 +352,12 @@ export function SwipeFeed({
 
       {currentCard && !drawerOpen && (
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 pb-4 text-[11px] text-slate-400">
-          {isSupport ? (
-            <>
-              <span>← {persona.swipeLabels.left.action.toLowerCase()}</span>
-              <span>→ {persona.swipeLabels.right.action.toLowerCase()}</span>
-              <span>↑ scroll chat</span>
-              <span>Buttons use persona actions</span>
-              <span>⌘Z undo</span>
-            </>
-          ) : (
-            <>
-              <span>← {persona.swipeLabels.left.action.toLowerCase()}</span>
-              <span>→ {persona.swipeLabels.right.action.toLowerCase()}</span>
-              <span>↑ {persona.swipeLabels.up.action.toLowerCase()}</span>
-              <span>↓ {persona.swipeLabels.down.action.toLowerCase()}</span>
-              <span>Space play/pause</span>
-              <span>⌘Z undo</span>
-            </>
-          )}
+          <span>← {persona.swipeLabels.left.action.toLowerCase()}</span>
+          <span>→ {persona.swipeLabels.right.action.toLowerCase()}</span>
+          <span>↑ {persona.swipeLabels.up.action.toLowerCase()}</span>
+          <span>↓ {persona.swipeLabels.down.action.toLowerCase()}</span>
+          <span>Space play/pause</span>
+          <span>⌘Z undo</span>
         </div>
       )}
     </div>

@@ -1,14 +1,14 @@
 # ContentSwipe
 
-An AI content QA + generation system. Studio defines what to generate → Pipeline produces content items → Feed is the review + decision layer.
+An AI video generation + QA system. Studio defines what to generate → Pipeline produces video content → Feed is the review + decision layer.
 
 ## Quick Context
 
 - **UI** is built in Loveable (separate) — it reads/writes Supabase directly
 - **This repo** is the backend: generation pipeline, content API, feed manager
 - **Supabase project:** `rnqkjfrwkyupkyvygtpg` at `https://rnqkjfrwkyupkyvygtpg.supabase.co`
-- **Content types:** support (screenshot-first), social (text-first), video (script/render states)
-- **V1 = one mixed feed** across all sessions, ~20 items, no multi-view/tabs/lanes
+- **Content types:** video only (script/render states) — support and social are out of V1 scope
+- **V1 = video-only feed** across all sessions, ~20 items, no multi-view/tabs/lanes
 
 ## Data Model (V1)
 
@@ -29,7 +29,7 @@ business → session → content_item
 
 ### content_items key fields
 
-- **Classification:** `content_type` (support/social/video), `channel` (intercom/linkedin/tiktok/etc.), `review_mode`, `source_type`
+- **Classification:** `content_type` (video), `channel` (tiktok/instagram/youtube/etc.), `review_mode`, `source_type`
 - **Payload:** `title`, `body_text`, `script`, `image_url`, `video_url`, `thumbnail_url`
 - **Source provenance:** `source_ref`, `source_bundle` (JSON), `prompt_input_summary`
 - **Review:** `review_status` (pending/approved/rejected/needs_edit), `review_note`, `reviewed_by`, `reviewed_at`
@@ -39,9 +39,9 @@ business → session → content_item
 
 ## V1 Scope — What To Build
 
-- One mixed feed across all sessions (~20 items, cached for demo)
-- All three content types: support, social, video
-- One prompt → multiple content_items
+- Video-only feed across all sessions (~20 items, cached for demo)
+- Video content type only — support and social removed from V1
+- One prompt → multiple content_items (video)
 - Editing triggers regeneration (live generation inputs, not static edits)
 - Starred/special designation persisted in backend
 - Source-aware: every item retains source_type, source_ref, source_bundle
@@ -49,15 +49,19 @@ business → session → content_item
 - Variant lineage via parent_id / variant_of
 - Clean classification metadata for future views
 
-## V2 — Explicitly Out of Scope
+## V2 — Intercom Ticket Storage
 
-Do NOT build: multi-view feed, view system, persona-driven routing, advanced review modes, batch actions, undo system, advanced generation controls, brand/style kit, configurable tabs. System should remain compatible with these futures.
+Store and surface Intercom support tickets as a content source. Tickets feed into the system but generation remains video-focused. Support ticket data model, Intercom API integration, and support QA review mode live here.
+
+## V3 — Explicitly Out of Scope
+
+Do NOT build: multi-view feed, view system, persona-driven routing, advanced review modes, batch actions, undo system, advanced generation controls, brand/style kit, configurable tabs, social content type. System should remain compatible with these futures.
 
 ## What's Built
 
 - **Content API** (`src/lib/content-api.ts`): paginated feed, swipe actions, undo, batch ops, generation trigger, history, search, analytics, realtime
 - **Feed Manager** (`src/lib/feed-manager.ts`): stateful swipe orchestrator with card queue, prefetching, undo stack, session stats
-- **Persona System** (`src/lib/personas.ts`): switchable focus modes — config only in v1, does not drive feed routing
+- **Persona System** (`src/lib/personas.ts`): video-focused review mode — config only in v1, does not drive feed routing
 - **Feed Analytics** (`src/lib/feed-analytics.ts`): performance metrics, leaderboard, time-series, variant analysis
 - **Generation Pipeline**: Gemini script → ElevenLabs audio + Veo video (parallel) → FFmpeg compose
 - **Feedback Loop**: watches for variant/ideas requests, creates new generation jobs

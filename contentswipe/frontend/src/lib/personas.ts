@@ -1,6 +1,6 @@
 import type { ContentType } from "../types/database";
 
-export type PersonaIcon = "video" | "headset" | "share" | "layers";
+export type PersonaIcon = "video" | "layers";
 
 export interface SwipeLabel {
   action: string;
@@ -29,9 +29,9 @@ export const PERSONAS: Persona[] = [
   {
     id: "content-creator",
     name: "Content Creator",
-    description: "Review and approve AI-generated video scripts and social posts",
+    description: "Review and approve AI-generated video scripts and renders",
     icon: "video",
-    contentTypes: ["video", "social"],
+    contentTypes: ["video"],
     swipeLabels: {
       right: {
         action: "Approve",
@@ -58,85 +58,15 @@ export const PERSONAS: Persona[] = [
         requiresFeedback: true,
       },
     },
-    emptyStateMessage: "No content to review",
+    emptyStateMessage: "No videos to review",
     emptyStateCta: "Create your first video",
-  },
-  {
-    id: "support-agent",
-    name: "Support Agent",
-    description: "Triage and respond to customer support tickets",
-    icon: "headset",
-    contentTypes: ["support"],
-    swipeLabels: {
-      right: {
-        action: "Send Reply",
-        shortcut: "→",
-        color: "#22c55e",
-        requiresFeedback: false,
-      },
-      left: {
-        action: "Discard",
-        shortcut: "←",
-        color: "#ef4444",
-        requiresFeedback: true,
-      },
-      up: {
-        action: "Escalate",
-        shortcut: "↑",
-        color: "#a855f7",
-        requiresFeedback: true,
-      },
-      down: {
-        action: "Add Note",
-        shortcut: "↓",
-        color: "#f59e0b",
-        requiresFeedback: true,
-      },
-    },
-    emptyStateMessage: "Inbox zero — no tickets to review",
-    emptyStateCta: "Check back later",
-  },
-  {
-    id: "social-manager",
-    name: "Social Manager",
-    description: "Review and schedule social content across channels",
-    icon: "share",
-    contentTypes: ["social"],
-    swipeLabels: {
-      right: {
-        action: "Schedule",
-        shortcut: "→",
-        color: "#22c55e",
-        requiresFeedback: false,
-      },
-      left: {
-        action: "Skip",
-        shortcut: "←",
-        color: "#ef4444",
-        requiresFeedback: false,
-      },
-      up: {
-        action: "Edit & Rewrite",
-        shortcut: "↑",
-        color: "#a855f7",
-        requiresFeedback: true,
-      },
-      down: {
-        action: "Add Note",
-        shortcut: "↓",
-        color: "#f59e0b",
-        requiresFeedback: true,
-      },
-    },
-    emptyStateMessage: "No posts to review",
-    emptyStateCta: "Draft a new post",
   },
   {
     id: "all",
     name: "Everything",
-    description: "All content types in a single feed",
+    description: "All video content in a single feed",
     icon: "layers",
-    contentTypes: ["support", "social", "video"],
+    contentTypes: ["video"],
     swipeLabels: {
       right: {
         action: "Approve",
@@ -168,13 +98,8 @@ export const PERSONAS: Persona[] = [
   },
 ];
 
-const PERSONA_ICON_SET = new Set<PersonaIcon>([
-  "video",
-  "headset",
-  "share",
-  "layers",
-]);
-const CONTENT_TYPE_SET = new Set<ContentType>(["video", "social", "support"]);
+const PERSONA_ICON_SET = new Set<PersonaIcon>(["video", "layers"]);
+const CONTENT_TYPE_SET = new Set<ContentType>(["video"]);
 const SWIPE_DIRECTIONS = ["right", "left", "up", "down"] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
