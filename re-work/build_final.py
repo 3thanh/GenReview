@@ -25,10 +25,18 @@ API_KEY = "259f6398060a96b007b14353f067710999fef2dadb9609e071bd008a7adecdda"
 VOICE_ID = "G2pIdqup6MlQFH2bibG4"
 TALKING_HEAD = os.path.join(BASE, "source_assets", "yash_talking_head_60s.mp4")
 W, H = 1280, 720
+FG_W, FG_H = 1024, 576  # 80% scale for breathing room
+FG_Y_OFFSET = -15  # shift up slightly for better headroom
+BLUR_BG = (
+    f"[0:v]split=2[bg][fg];"
+    f"[bg]scale={W}:{H},boxblur=25:5,eq=brightness=-0.25:saturation=0.4[bgout];"
+    f"[fg]scale={FG_W}:{FG_H}[fgout];"
+    f"[bgout][fgout]overlay=(W-w)/2:(H-h)/2+{FG_Y_OFFSET}"
+)
 
 SCRIPTS = {
     "clay_ads": {
-        "output": "clay_ads_v3.mp4",
+        "output": "clay_ads_v4.mp4",
         "segments": [
             {"id": 1, "type": "head",
              "line": "Most teams are still uploading CSVs to run ads... and their targeting is outdated the second they hit upload."},
@@ -55,7 +63,7 @@ SCRIPTS = {
         ],
     },
     "terracotta": {
-        "output": "terracotta_v3.mp4",
+        "output": "terracotta_v4.mp4",
         "segments": [
             {"id": 1, "type": "head",
              "line": "Today, I want to show you something we've been building behind the scenes at Clay — Terracotta."},
@@ -205,13 +213,16 @@ def build_script(name, config):
             if seg.get("stat"):
                 stat_png = os.path.join(work, f"stat_{i}.png")
                 render_stat_bar(stat_png, seg["stat"])
+                fc = (
+                    f"{BLUR_BG}[framed];"
+                    f"[framed][1:v]overlay=0:{H - 60}[vout]"
+                )
                 run([
                     "ffmpeg", "-y",
                     "-ss", str(head_offset), "-t", str(dur), "-i", TALKING_HEAD,
                     "-i", stat_png,
                     "-i", wav,
-                    "-filter_complex",
-                    f"[0:v]scale={W}:{H},setsar=1[sv];[sv][1:v]overlay=0:{H - 60}[vout]",
+                    "-filter_complex", fc,
                     "-map", "[vout]", "-map", "2:a",
                     "-c:v", "libx264", "-preset", "fast", "-crf", "18",
                     "-pix_fmt", "yuv420p",
@@ -220,16 +231,17 @@ def build_script(name, config):
                     vid,
                 ])
             else:
+                fc = f"{BLUR_BG}[vout]"
                 run([
                     "ffmpeg", "-y",
                     "-ss", str(head_offset), "-t", str(dur), "-i", TALKING_HEAD,
                     "-i", wav,
-                    "-map", "0:v", "-map", "1:a",
+                    "-filter_complex", fc,
+                    "-map", "[vout]", "-map", "1:a",
                     "-c:v", "libx264", "-preset", "fast", "-crf", "18",
                     "-pix_fmt", "yuv420p",
                     "-c:a", "aac", "-b:a", "192k", "-ac", "2",
-                    "-r", "24", "-s", f"{W}x{H}",
-                    "-t", str(dur),
+                    "-r", "24", "-t", str(dur),
                     vid,
                 ])
             head_offset += dur
