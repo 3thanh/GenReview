@@ -94,6 +94,16 @@ type NarrationStyle = "warm_narrator" | "energetic" | "casual" | "authoritative"
 type VideoTone = "comedy" | "dramatic" | "informative" | "inspirational" | "edgy";
 type TransitionStyle = "crossfade" | "hard_cut" | "swipe" | "zoom";
 
+type TargetUse =
+  | "social_organic"
+  | "paid_ad"
+  | "product_demo"
+  | "brand_awareness"
+  | "event_promo"
+  | "internal"
+  | "pitch_deck"
+  | "entertainment";
+
 interface VideoConfig {
   visualStyle: VisualStyle;
   styleNotes: string;
@@ -106,6 +116,7 @@ interface VideoConfig {
   transitionStyle: TransitionStyle;
   kenBurnsEnabled: boolean;
   sfxEnabled: boolean;
+  targetUse: TargetUse;
 }
 
 const AIRPLANE_VIDEO_DEFAULTS: VideoConfig = {
@@ -121,6 +132,7 @@ const AIRPLANE_VIDEO_DEFAULTS: VideoConfig = {
   transitionStyle: "crossfade",
   kenBurnsEnabled: true,
   sfxEnabled: true,
+  targetUse: "entertainment",
 };
 
 const VISUAL_STYLE_OPTIONS: Array<{ value: VisualStyle; label: string; desc: string }> = [
@@ -176,6 +188,17 @@ const TRANSITION_OPTIONS: Array<{ value: TransitionStyle; label: string }> = [
   { value: "zoom", label: "Zoom" },
 ];
 
+const TARGET_USE_OPTIONS: Array<{ value: TargetUse; label: string; desc: string }> = [
+  { value: "social_organic", label: "Social (Organic)", desc: "Reels, TikToks, Stories" },
+  { value: "paid_ad", label: "Paid Ad", desc: "Sponsored placements & campaigns" },
+  { value: "product_demo", label: "Product Demo", desc: "Feature walkthrough or showcase" },
+  { value: "brand_awareness", label: "Brand Awareness", desc: "Top-of-funnel reach & recall" },
+  { value: "event_promo", label: "Event Promo", desc: "Conference, launch, or meetup" },
+  { value: "internal", label: "Internal", desc: "Team updates, training, all-hands" },
+  { value: "pitch_deck", label: "Pitch / Deck", desc: "Investor or sales presentation" },
+  { value: "entertainment", label: "Entertainment", desc: "Comedy, memes, viral content" },
+];
+
 function composeVideoPrompt(userPrompt: string, config: VideoConfig): string {
   const styleLookup: Record<VisualStyle, string> = {
     cinematic_cgi:
@@ -205,10 +228,22 @@ function composeVideoPrompt(userPrompt: string, config: VideoConfig): string {
     none: "no voiceover narration — music and visuals only",
   };
 
+  const targetUseLookup: Record<TargetUse, string> = {
+    social_organic: "organic social media (Reels, TikToks, Stories) — optimized for engagement and shareability",
+    paid_ad: "paid advertising placement — clear value prop, strong CTA, conversion-focused",
+    product_demo: "product demo or feature walkthrough — clear, informative, benefit-driven",
+    brand_awareness: "brand awareness / top-of-funnel — memorable, emotionally resonant, wide appeal",
+    event_promo: "event promotion — urgency, FOMO, date/location clarity, community energy",
+    internal: "internal communications — clear, on-brand, professional but approachable",
+    pitch_deck: "pitch or sales presentation — credibility, data-backed, persuasive narrative",
+    entertainment: "entertainment / viral content — humor, surprise, shareability, cultural relevance",
+  };
+
   const parts = [
     userPrompt,
     "",
     "─── VIDEO CONFIGURATION ───",
+    `Target Use: ${targetUseLookup[config.targetUse]}`,
     `Visual Style: ${styleLookup[config.visualStyle]}`,
     config.styleNotes ? `Additional Style Notes: ${config.styleNotes}` : "",
     `Script Format: ${formatLookup[config.scriptFormat]}`,
@@ -1015,6 +1050,36 @@ export function Studio({
 
               {configExpanded && (
                 <div className="max-h-[42vh] space-y-4 overflow-y-auto border-t border-slate-200/60 px-4 py-4">
+                  {/* Target Use */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        Target Use
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {TARGET_USE_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() =>
+                            setVideoConfig((c) => ({ ...c, targetUse: opt.value }))
+                          }
+                          className={`rounded-2xl border px-2.5 py-2 text-left transition-all ${
+                            videoConfig.targetUse === opt.value
+                              ? "border-amber-300 bg-amber-50 text-slate-900"
+                              : "border-slate-200/80 bg-white/50 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                          }`}
+                        >
+                          <p className="text-xs font-semibold">{opt.label}</p>
+                          <p className="mt-0.5 text-[10px] leading-tight text-slate-400">
+                            {opt.desc}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Visual Style */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
