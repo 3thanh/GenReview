@@ -53,6 +53,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [swiping, setSwiping] = useState(false);
   const [videoTimestamp, setVideoTimestamp] = useState<number | null>(null);
+  const [drawerInitialText, setDrawerInitialText] = useState("");
 
   const supportCardRef = useRef<SupportCardHandle>(null);
   const videoCardRef = useRef<VideoCardHandle>(null);
@@ -80,15 +81,6 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         return;
       }
 
-      const label = persona.swipeLabels[direction];
-
-      if (label.requiresFeedback) {
-        captureVideoTimestamp();
-        setPendingDirection(direction);
-        setDrawerOpen(true);
-        return;
-      }
-
       setSwiping(true);
       setExitDirection(direction);
       setTimeout(() => {
@@ -97,7 +89,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         setExitDirection(null);
       }, 250);
     },
-    [currentCard, swiping, persona, swipe, isSupport, captureVideoTimestamp]
+    [currentCard, swiping, swipe, isSupport]
   );
 
   const handleScrollChat = useCallback(
@@ -134,11 +126,13 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
     setDrawerOpen(false);
     setPendingDirection(null);
     setVideoTimestamp(null);
+    setDrawerInitialText("");
   }, []);
 
-  const handleStartTyping = useCallback(() => {
+  const handleStartTyping = useCallback((key: string) => {
     if (!currentCard || drawerOpen) return;
     captureVideoTimestamp();
+    setDrawerInitialText(key);
     setPendingDirection("left");
     setDrawerOpen(true);
   }, [currentCard, drawerOpen, captureVideoTimestamp]);
@@ -225,7 +219,11 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         direction={pendingDirection}
         persona={persona}
         videoTimestamp={videoTimestamp}
-        onSubmit={handleFeedbackSubmit}
+        initialText={drawerInitialText}
+        onSubmit={(feedback) => {
+          setDrawerInitialText("");
+          handleFeedbackSubmit(feedback);
+        }}
         onCancel={handleFeedbackCancel}
       />
 

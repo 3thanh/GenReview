@@ -8,6 +8,7 @@ interface FeedbackDrawerProps {
   direction: SwipeDirection | null;
   persona: Persona;
   videoTimestamp?: number | null;
+  initialText?: string;
   onSubmit: (feedback: string) => void;
   onCancel: () => void;
 }
@@ -23,6 +24,7 @@ export function FeedbackDrawer({
   direction,
   persona,
   videoTimestamp,
+  initialText = "",
   onSubmit,
   onCancel,
 }: FeedbackDrawerProps) {
@@ -31,16 +33,22 @@ export function FeedbackDrawer({
 
   useEffect(() => {
     if (open) {
-      setText("");
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setText(initialText);
+      setTimeout(() => {
+        const el = inputRef.current;
+        if (el) {
+          el.focus();
+          el.selectionStart = el.selectionEnd = el.value.length;
+        }
+      }, 100);
     }
-  }, [open]);
+  }, [open, initialText]);
 
   const label = direction ? persona.swipeLabels[direction] : null;
   const hasTimestamp = videoTimestamp !== null && videoTimestamp !== undefined;
 
   const handleSubmit = () => {
-    if (!text.trim() && label?.requiresFeedback) return;
+    if (!text.trim()) return;
     onSubmit(text.trim());
     setText("");
   };
@@ -134,7 +142,7 @@ export function FeedbackDrawer({
               </p>
               <button
                 onClick={handleSubmit}
-                disabled={!text.trim() && label?.requiresFeedback}
+                disabled={!text.trim()}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-30"
                 style={{
                   backgroundColor: (label?.color ?? "#3b82f6") + "20",
