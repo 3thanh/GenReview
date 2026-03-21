@@ -192,7 +192,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
                 animate="center"
                 exit="exit"
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="w-full max-w-lg"
+                className="w-full max-w-2xl"
               >
                 <ContentCard
                   ref={supportCardRef}

@@ -29,7 +29,7 @@ export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
     }[card.content_type];
 
     return (
-      <div className="w-full max-w-lg mx-auto">
+      <div className="w-full max-w-2xl mx-auto">
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
           {/* Type badge + starred + channel */}
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
