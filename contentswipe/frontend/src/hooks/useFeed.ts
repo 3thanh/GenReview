@@ -357,6 +357,31 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
       if (!card) return;
 
       setError(null);
+
+      if (sourceMode === "demo") {
+        setCards((prev) => [...prev.slice(1), prev[0]]);
+
+        undoStack.current.push({
+          cardId: card.id,
+          direction,
+          feedback,
+          previousStatus: card.review_status,
+          timestamp: Date.now(),
+          cardSnapshot: card,
+        });
+        if (undoStack.current.length > 50) undoStack.current.shift();
+
+        setStats((s) => ({
+          ...s,
+          totalSwiped: s.totalSwiped + 1,
+          approved: s.approved + (direction === "right" ? 1 : 0),
+          rejected: s.rejected + (direction === "left" ? 1 : 0),
+          variants: s.variants + (direction === "up" ? 1 : 0),
+          ideas: s.ideas + (direction === "down" ? 1 : 0),
+        }));
+        return;
+      }
+
       seenIds.current.add(card.id);
       setCards((prev) => prev.slice(1));
 
@@ -371,18 +396,6 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
 
       undoStack.current.push(action);
       if (undoStack.current.length > 50) undoStack.current.shift();
-
-      if (sourceMode === "demo") {
-        setStats((s) => ({
-          ...s,
-          totalSwiped: s.totalSwiped + 1,
-          approved: s.approved + (direction === "right" ? 1 : 0),
-          rejected: s.rejected + (direction === "left" ? 1 : 0),
-          variants: s.variants + (direction === "up" ? 1 : 0),
-          ideas: s.ideas + (direction === "down" ? 1 : 0),
-        }));
-        return;
-      }
 
       const update: ContentItemUpdate = {
         updated_at: new Date().toISOString(),
@@ -437,7 +450,10 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
     if (!lastAction) return;
 
     if (sourceMode === "demo") {
-      setCards((prev) => insertSorted(prev, lastAction.cardSnapshot));
+      setCards((prev) => {
+        const withoutLast = prev.filter((c) => c.id !== lastAction.cardId);
+        return [lastAction.cardSnapshot, ...withoutLast];
+      });
       setStats((s) => ({
         ...s,
         totalSwiped: Math.max(0, s.totalSwiped - 1),
