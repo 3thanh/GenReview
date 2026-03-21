@@ -1,0 +1,4 @@
+audio_segments/
+video_segments/
+output/
+source_assets/*.wav
