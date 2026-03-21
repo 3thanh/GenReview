@@ -43,7 +43,7 @@ export function PersonaSwitcher({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/78 px-3 py-1.5 text-left transition-colors hover:bg-white"
+        className="flex items-center gap-2 whitespace-nowrap rounded-full border border-slate-200/90 bg-white/78 px-3 py-1.5 text-left transition-colors hover:bg-white"
       >
         <div
           className="flex h-6 w-6 items-center justify-center rounded-lg"
