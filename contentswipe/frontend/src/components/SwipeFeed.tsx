@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useFeed } from "../hooks/useFeed";
@@ -8,6 +8,7 @@ import { ActionBar } from "./ActionBar";
 import { FeedbackDrawer } from "./FeedbackDrawer";
 import { EmptyState } from "./EmptyState";
 import { PersonaSwitcher } from "./PersonaSwitcher";
+import type { SupportCardHandle } from "./SupportCard";
 import type { Persona, SwipeDirection } from "../types/database";
 import { PERSONAS } from "../types/database";
 
@@ -45,9 +46,20 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [swiping, setSwiping] = useState(false);
 
+  const supportCardRef = useRef<SupportCardHandle>(null);
+
+  const isSupport = currentCard?.content_type === "support_reply";
+
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {
       if (!currentCard || swiping) return;
+
+      // For support cards, up/down scroll the chat — don't trigger swipe
+      if (isSupport && (direction === "up" || direction === "down")) {
+        supportCardRef.current?.scrollChat(direction);
+        return;
+      }
+
       const label = persona.swipeLabels[direction];
 
       if (label.requiresFeedback) {
@@ -64,7 +76,14 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
         setExitDirection(null);
       }, 250);
     },
-    [currentCard, swiping, persona, swipe]
+    [currentCard, swiping, persona, swipe, isSupport]
+  );
+
+  const handleScrollChat = useCallback(
+    (direction: "up" | "down") => {
+      supportCardRef.current?.scrollChat(direction);
+    },
+    []
   );
 
   const handleFeedbackSubmit = useCallback(
@@ -104,6 +123,8 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
     onUndo: undo,
     onStartTyping: handleStartTyping,
     onTogglePlay: handleTogglePlay,
+    onScrollChat: handleScrollChat,
+    chatScrollActive: isSupport,
     enabled: !drawerOpen,
   });
 
@@ -145,6 +166,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
                 className="w-full max-w-lg"
               >
                 <ContentCard
+                  ref={supportCardRef}
                   card={currentCard}
                   isPlaying={isPlaying}
                   onTogglePlay={handleTogglePlay}
@@ -163,6 +185,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
           onUndo={undo}
           canUndo={canUndo}
           disabled={swiping}
+          isSupportCard={isSupport}
         />
       )}
 
@@ -178,10 +201,21 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
       {/* Keyboard hints */}
       {currentCard && !drawerOpen && (
         <div className="flex items-center justify-center gap-4 pb-3 text-[11px] text-zinc-600">
-          <span>← → ↑ ↓ swipe</span>
-          <span>Space play/pause</span>
-          <span>⌘Z undo</span>
-          <span>Type to add notes</span>
+          {isSupport ? (
+            <>
+              <span>← reject</span>
+              <span>→ approve</span>
+              <span>↑ ↓ scroll chat</span>
+              <span>⌘Z undo</span>
+            </>
+          ) : (
+            <>
+              <span>← → ↑ ↓ swipe</span>
+              <span>Space play/pause</span>
+              <span>⌘Z undo</span>
+              <span>Type to add notes</span>
+            </>
+          )}
         </div>
       )}
     </div>

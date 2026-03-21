@@ -6,6 +6,8 @@ interface UseKeyboardOptions {
   onUndo: () => void;
   onStartTyping: () => void;
   onTogglePlay: () => void;
+  onScrollChat?: (direction: "up" | "down") => void;
+  chatScrollActive?: boolean;
   enabled?: boolean;
 }
 
@@ -14,6 +16,8 @@ export function useKeyboard({
   onUndo,
   onStartTyping,
   onTogglePlay,
+  onScrollChat,
+  chatScrollActive = false,
   enabled = true,
 }: UseKeyboardOptions) {
   const handler = useCallback(
@@ -39,11 +43,19 @@ export function useKeyboard({
           break;
         case "ArrowUp":
           e.preventDefault();
-          onSwipe("up");
+          if (chatScrollActive && onScrollChat) {
+            onScrollChat("up");
+          } else {
+            onSwipe("up");
+          }
           break;
         case "ArrowDown":
           e.preventDefault();
-          onSwipe("down");
+          if (chatScrollActive && onScrollChat) {
+            onScrollChat("down");
+          } else {
+            onSwipe("down");
+          }
           break;
         case " ":
           e.preventDefault();
@@ -62,7 +74,7 @@ export function useKeyboard({
           break;
       }
     },
-    [enabled, onSwipe, onUndo, onStartTyping, onTogglePlay]
+    [enabled, onSwipe, onUndo, onStartTyping, onTogglePlay, onScrollChat, chatScrollActive]
   );
 
   useEffect(() => {
