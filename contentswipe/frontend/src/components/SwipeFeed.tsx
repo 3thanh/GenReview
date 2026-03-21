@@ -259,27 +259,15 @@ export function SwipeFeed({
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] flex-col">
-      <div className="flex items-start justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="min-w-0 space-y-3">
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-              Review cards with {persona.name}
-            </h1>
-            <p className="mt-1 max-w-xl text-sm leading-5 text-slate-500">
-              {feedSourceMode === "demo"
-                ? "Demo mode — seeded cached cards."
-                : "Live Supabase queue."}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <FeedSourceToggle value={feedSourceMode} onChange={onChangeFeedSourceMode} />
-            <PersonaSwitcher
-              personas={personas}
-              current={persona}
-              onSelect={(nextPersona) => onSelectPersona(nextPersona.id)}
-            />
-          </div>
+    <div className="flex h-[calc(100vh-5rem)] flex-col">
+      <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          <FeedSourceToggle value={feedSourceMode} onChange={onChangeFeedSourceMode} />
+          <PersonaSwitcher
+            personas={personas}
+            current={persona}
+            onSelect={(nextPersona) => onSelectPersona(nextPersona.id)}
+          />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {statCards.map((card) => (
