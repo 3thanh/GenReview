@@ -124,10 +124,16 @@ body{
   width:8px;height:8px;border-radius:50%;display:inline-block;
 }
 
-/* ─── LinkedIn-style author header ─── */
+/* ─── LinkedIn card ─── */
+.card.linkedin-card .card-visual{display:none}
+.card.linkedin-card{display:flex;flex-direction:column}
+
+.linkedin-card-header{
+  padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.06);
+  flex-shrink:0;
+}
 .linkedin-author{
   display:flex;align-items:center;gap:10px;
-  padding:0 0 8px;border-bottom:1px solid rgba(255,255,255,.06);
 }
 .linkedin-author .author-avatar{
   width:36px;height:36px;border-radius:50%;flex-shrink:0;
@@ -142,6 +148,14 @@ body{
   font-size:10px;font-weight:800;color:#fff;flex-shrink:0;
   margin-left:auto;
 }
+
+.linkedin-post-body{
+  flex:1;overflow-y:auto;padding:16px;
+  font-size:14px;color:#d4d4d8;line-height:1.6;
+  white-space:pre-wrap;word-break:break-word;
+  scrollbar-width:none;
+}
+.linkedin-post-body::-webkit-scrollbar{display:none}
 
 /* ─── Support card — conversation thread ─── */
 .card.support-card .card-visual{display:none}
@@ -434,7 +448,26 @@ const BUSINESSES = [
 ];
 
 const DEMO_CARDS = [
-  // ── Video Scripts ──
+  // ── 1. AI Models on a Crashing Plane ──
+  {
+    id: "gv2", title: "AI Models on a Crashing Plane", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "Comedy skit: GPT-4, Claude, Llama, Grok, and Gemini personified on a crashing plane. 1.4x speed.",
+    video_url: "https://rnqkjfrwkyupkyvygtpg.supabase.co/storage/v1/object/public/content-videos/uploads/1774113610235-resonate-reel-1.4x.mp4",
+    script: "[Setup] The plane shudders. Oxygen masks drop.\n[GPT-4] Drafts a 47-point evacuation plan.\n[Claude] \"I just want to make sure everyone feels heard.\"\n[Llama] \"I'm open source — infinite versions of me.\"\n[Grok] Posts \"we're so cooked\" on X.\n[Gemini] 1M token context window. Hands the harness away. Writes his own eulogy in Google Docs.",
+    gradient: "linear-gradient(135deg,#4c1d95,#7c3aed,#c084fc)"
+  },
+  // ── 2. Day in the Life of a Vibe Coder ──
+  {
+    id: "gv3", title: "Day in the Life of a Vibe Coder", content_type: "video_script",
+    business_id: "b2", status: "pending",
+    description: "A comedic day-in-the-life walkthrough: waking up to broken code, describing features in plain English, and trusting tomorrow you'll understand it.",
+    video_url: "https://rnqkjfrwkyupkyvygtpg.supabase.co/storage/v1/object/public/content-videos/uploads/1774113370285-vibe-coder-reel-1.4x.mp4",
+    script: "[Intro] Hi, this is a day in the life of a vibe coder.\n[9:30 AM] Check if anything broke overnight. It did.\n[Understanding] Try to understand what I built yesterday. It feels intentional.\n[11 AM] New feature: describe what I want, hope for the best.\n[Breaks] Something breaks. Sit with it until it becomes a different problem.\n[2 PM] Long lunch — give the code some space.\n[Return] It's working again. Win.\n[4:30 PM] Run a batch. Don't touch anything.\n[Explaining] Walk someone through the overall vision.\n[Last change] One small change. Breaks everything.\n[Close] Trust tomorrow I'll understand it.",
+    gradient: "linear-gradient(135deg,#064e3b,#059669,#34d399)"
+  },
+
+  // ── 3–4. LinkedIn leads ──
   {
     id: "v1", title: "Morning Ritual", content_type: "video_script",
     business_id: "b1", status: "pending",
@@ -641,6 +674,14 @@ function isCurrentCardSupport() {
   return queue.length > 0 && queue[0].content_type === "support_reply" && queue[0].conversation;
 }
 
+function isCurrentCardLinkedIn() {
+  return queue.length > 0 && queue[0].content_type === "linkedin_post";
+}
+
+function isCurrentCardScrollable() {
+  return isCurrentCardSupport() || isCurrentCardLinkedIn();
+}
+
 // ── Init ───────────────────────────────────────────────────────
 
 function init() {
@@ -648,6 +689,15 @@ function init() {
   switchPersona(PERSONAS[0]);
   document.addEventListener("keydown", handleKeyboard);
   document.getElementById("feedback-overlay").addEventListener("click", closeFeedback);
+
+  document.querySelector(".card-stage").addEventListener("wheel", (e) => {
+    const scrollTarget = document.querySelector(".card.active .conversation-thread")
+      || document.querySelector(".card.active .linkedin-post-body");
+    if (scrollTarget) {
+      e.preventDefault();
+      scrollTarget.scrollBy({ top: e.deltaY, behavior: "auto" });
+    }
+  }, { passive: false });
 }
 
 // ── Persona strip ──────────────────────────────────────────────
@@ -676,6 +726,19 @@ function switchPersona(p) {
   renderActionBar();
   updateHints();
   updateStats();
+}
+
+function toggleCardVideo(el) {
+  const v = el.querySelector("video");
+  if (!v) return;
+  if (v.paused) { v.muted = false; v.play(); }
+  else { v.pause(); }
+}
+
+function autoPlayActiveVideo() {
+  document.querySelectorAll(".card video").forEach(v => { v.pause(); v.currentTime = 0; });
+  const activeVideo = document.querySelector(".card.active video");
+  if (activeVideo) { activeVideo.muted = true; activeVideo.play().catch(() => {}); }
 }
 
 // ── Card rendering ─────────────────────────────────────────────
@@ -710,16 +773,26 @@ function renderCards() {
   if (thread) {
     requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
   }
+
+  requestAnimationFrame(() => autoPlayActiveVideo());
 }
 
 function renderGenericCard(card, cls, biz) {
   if (card.content_type === "linkedin_post" && card.author) {
     return renderLinkedInCard(card, cls, biz);
   }
+
+  const visualContent = card.video_url
+    ? `<div class="card-visual" style="background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="toggleCardVideo(this)">
+        <video src="${card.video_url}" preload="auto" loop playsinline muted style="width:100%;height:100%;object-fit:contain;border-radius:var(--radius) var(--radius) 0 0"></video>
+        <span class="type-badge ${card.content_type}" style="z-index:2">${TYPE_LABELS[card.content_type]}</span>
+      </div>`
+    : `<div class="card-visual" style="background:${card.gradient}">
+        <span class="type-badge ${card.content_type}">${TYPE_LABELS[card.content_type]}</span>
+      </div>`;
+
   return `<div class="card ${cls}" data-id="${card.id}">
-    <div class="card-visual" style="background:${card.gradient}">
-      <span class="type-badge ${card.content_type}">${TYPE_LABELS[card.content_type]}</span>
-    </div>
+    ${visualContent}
     <div class="card-body">
       <h2>${card.title}</h2>
       <div class="desc">${card.description}</div>
@@ -734,14 +807,10 @@ function renderGenericCard(card, cls, biz) {
 
 function renderLinkedInCard(card, cls, biz) {
   const a = card.author;
-  const postLines = card.script.split("\n").filter(l => l.trim());
-  const previewText = card.script.slice(0, 400) + (card.script.length > 400 ? "…" : "");
 
-  return `<div class="card ${cls}" data-id="${card.id}">
-    <div class="card-visual" style="background:${card.gradient};height:32%">
-      <span class="type-badge linkedin_post">LinkedIn Post</span>
-    </div>
-    <div class="card-body" style="gap:12px">
+  return `<div class="card linkedin-card ${cls}" data-id="${card.id}">
+    <div class="linkedin-card-header">
+      <span class="type-badge linkedin_post" style="position:static;display:inline-block;margin-bottom:8px">LinkedIn Post</span>
       <div class="linkedin-author">
         <div class="author-avatar" style="background:${biz?.color ?? '#666'}">${a.initials}</div>
         <div>
@@ -750,11 +819,11 @@ function renderLinkedInCard(card, cls, biz) {
         </div>
         <div class="linkedin-icon">in</div>
       </div>
-      <div class="script-preview" style="font-family:'Outfit',sans-serif;font-size:13px;color:#d4d4d8;line-height:1.55;white-space:pre-wrap">${previewText}</div>
-      <div class="campaign-tag">
-        <span style="background:${biz?.color ?? '#666'}"></span>
-        ${biz?.name ?? "Unknown"}
-      </div>
+    </div>
+    <div class="linkedin-post-body">${card.script}</div>
+    <div class="campaign-tag" style="padding:10px 16px;margin-top:auto;flex-shrink:0;border-top:1px solid rgba(255,255,255,.05)">
+      <span style="background:${biz?.color ?? '#666'}"></span>
+      ${biz?.name ?? "Unknown"}
     </div>
   </div>`;
 }
@@ -829,13 +898,14 @@ function renderActionBar() {
   const p = currentPersona;
   const canUndo = undoStack.length > 0;
 
-  if (isCurrentCardSupport()) {
+  if (isCurrentCardScrollable()) {
+    const scrollLabel = isCurrentCardSupport() ? "scroll chat" : "scroll post";
     bar.innerHTML = `
       <button class="action-btn undo-btn ${canUndo ? "" : "disabled"}" onclick="undo()" title="Undo (Z)">↩</button>
       <button class="action-btn reject" style="border-color:${p.colors.left};color:${p.colors.left}" onclick="swipe('left')" title="${p.labels.left} (←)">
         ✕<span class="label" style="color:${p.colors.left}">${p.labels.left}</span>
       </button>
-      <button class="action-btn scroll-hint-btn" title="↑ ↓ scroll chat">⇕</button>
+      <button class="action-btn scroll-hint-btn" title="↑ ↓ ${scrollLabel}">⇕</button>
       <button class="action-btn approve" style="border-color:${p.colors.right};color:${p.colors.right}" onclick="swipe('right')" title="${p.labels.right} (→)">
         ✓<span class="label" style="color:${p.colors.right}">${p.labels.right}</span>
       </button>
@@ -861,8 +931,9 @@ function renderActionBar() {
 
 // ── Scroll conversation ────────────────────────────────────────
 
-function scrollConversation(direction) {
-  const thread = document.querySelector(".card.active .conversation-thread");
+function scrollCardContent(direction) {
+  const thread = document.querySelector(".card.active .conversation-thread")
+    || document.querySelector(".card.active .linkedin-post-body");
   if (!thread) return;
   const delta = direction === "down" ? 140 : -140;
   thread.scrollBy({ top: delta, behavior: "smooth" });
@@ -873,9 +944,8 @@ function scrollConversation(direction) {
 function swipe(direction) {
   if (animating || queue.length === 0) return;
 
-  // For support cards, up/down scrolls the conversation
-  if (isCurrentCardSupport() && (direction === "up" || direction === "down")) {
-    scrollConversation(direction);
+  if (isCurrentCardScrollable() && (direction === "up" || direction === "down")) {
+    scrollCardContent(direction);
     return;
   }
 
@@ -1004,12 +1074,12 @@ function handleKeyboard(e) {
     case "ArrowLeft": e.preventDefault(); swipe("left"); break;
     case "ArrowUp":
       e.preventDefault();
-      if (isCurrentCardSupport()) scrollConversation("up");
+      if (isCurrentCardScrollable()) scrollCardContent("up");
       else swipe("up");
       break;
     case "ArrowDown":
       e.preventDefault();
-      if (isCurrentCardSupport()) scrollConversation("down");
+      if (isCurrentCardScrollable()) scrollCardContent("down");
       else swipe("down");
       break;
     case "z": case "Z": if (!e.metaKey && !e.ctrlKey) undo(); break;
@@ -1026,11 +1096,12 @@ function updateStats() {
 
 function updateHints() {
   const hints = document.getElementById("kbd-hints");
-  if (isCurrentCardSupport()) {
+  if (isCurrentCardScrollable()) {
+    const scrollTarget = isCurrentCardSupport() ? "chat" : "post";
     hints.innerHTML = `
       <div><kbd>→</kbd> ${currentPersona.labels.right}</div>
       <div><kbd>←</kbd> ${currentPersona.labels.left}</div>
-      <div><kbd>↑↓</kbd> Scroll chat</div>
+      <div><kbd>↑↓</kbd> Scroll ${scrollTarget}</div>
       <div><kbd>Z</kbd> Undo</div>
     `;
   } else {
