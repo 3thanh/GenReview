@@ -151,14 +151,6 @@ export function SwipeFeed({
     [captureVideoTimestamp, currentCard, persona, swiping, performSwipe]
   );
 
-  const handleKeyboardSwipe = useCallback(
-    (direction: SwipeDirection) => {
-      if (!currentCard || swiping) return;
-      performSwipe(direction);
-    },
-    [currentCard, swiping, performSwipe]
-  );
-
   const handleFeedbackSubmit = useCallback(
     (feedback: string) => {
       if (!pendingDirection) return;
@@ -218,7 +210,7 @@ export function SwipeFeed({
   );
 
   useKeyboard({
-    onSwipe: handleKeyboardSwipe,
+    onSwipe: handleSwipe,
     onUndo: undo,
     onStartTyping: handleStartTyping,
     onTogglePlay: handleTogglePlay,
