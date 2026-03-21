@@ -30,6 +30,8 @@ export interface SfxCue {
   durationSeconds: number;
 }
 
+export type CameraStyle = "stable" | "smooth" | "dynamic" | "handheld" | "chaotic";
+
 export interface VideoScript {
   title: string;
   totalDurationSeconds: number;
@@ -37,6 +39,7 @@ export interface VideoScript {
   voiceover: VoiceoverLine[];
   sfx: SfxCue[];
   videoPrompt: string;
+  cameraStyle?: CameraStyle;
 }
 
 /**
@@ -95,7 +98,8 @@ Create a detailed video production plan. Return ONLY valid JSON, no markdown:
       "durationSeconds": 3
     }
   ],
-  "videoPrompt": "A single cohesive prompt describing the FULL video visually, scene by scene, for a text-to-video AI. Focus purely on what the camera SEES — movement, lighting, subjects, transitions. No audio or voice descriptions. 2-4 sentences."
+  "videoPrompt": "A single cohesive prompt describing the FULL video visually, scene by scene, for a text-to-video AI. Focus purely on what the camera SEES — movement, lighting, subjects, transitions. No audio or voice descriptions. 2-4 sentences. IMPORTANT: Always specify camera movement style (e.g. 'smooth steady cam', 'locked-off tripod shot', 'gentle dolly', 'handheld shaky cam'). Default to smooth/stable camera unless the scene specifically calls for chaotic movement (action, crashes, urgency).",
+  "cameraStyle": "One of: stable | smooth | dynamic | handheld | chaotic — describes overall camera motion feel. Use 'stable' or 'smooth' for most content. Only use 'handheld' or 'chaotic' for intense/action scenes."
 }
 
 RULES:
@@ -104,6 +108,8 @@ RULES:
 - sfx should describe acoustic character, not just name the sound — think texture, scale, environment
 - sfx prompt should NEVER describe voices, speech, music, or silence
 - videoPrompt should paint a vivid visual picture with no audio references
+- videoPrompt MUST include explicit camera movement/stability instructions. Default to smooth, steady camera work. Only use shaky/handheld camera for action-heavy or chaotic scenes (crashes, chases, urgency). Calm/lifestyle/tutorial content should always specify "smooth steady camera", "locked tripod shot", or "gentle dolly movement".
+- cameraStyle should match the content mood: lifestyle/tutorial/product → "stable" or "smooth", action/sports → "dynamic", documentary/BTS → "handheld", crash/chaos → "chaotic"
 - stability: LOW (0.1-0.3) for excited/emotional, MED (0.3-0.5) for conversational, HIGH (0.6-0.8) for calm/authoritative
 - style: HIGH (0.5-0.8) for dramatic/expressive, LOW (0.1-0.3) for understated
 - scenes should flow like a real video — establish, build, payoff
