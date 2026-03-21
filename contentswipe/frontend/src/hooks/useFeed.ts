@@ -359,7 +359,11 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
       setError(null);
 
       if (sourceMode === "demo") {
-        setCards((prev) => [...prev.slice(1), prev[0]]);
+        if (direction === "left") {
+          setCards((prev) => [prev[prev.length - 1], ...prev.slice(0, -1)]);
+        } else {
+          setCards((prev) => [...prev.slice(1), prev[0]]);
+        }
 
         undoStack.current.push({
           cardId: card.id,

@@ -178,7 +178,11 @@ export function SwipeFeed({
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {
       if (!currentCard || swiping) return;
-      if (persona.swipeLabels[direction].requiresFeedback) {
+
+      const isNavigation =
+        feedSourceMode === "demo" && (direction === "left" || direction === "right");
+
+      if (!isNavigation && persona.swipeLabels[direction].requiresFeedback) {
         captureVideoTimestamp();
         setPendingDirection(direction);
         setDrawerOpen(true);
@@ -193,7 +197,7 @@ export function SwipeFeed({
         setExitDirection(null);
       }, 250);
     },
-    [captureVideoTimestamp, currentCard, persona, swiping, swipe]
+    [captureVideoTimestamp, currentCard, feedSourceMode, persona, swiping, swipe]
   );
 
   const handleFeedbackSubmit = useCallback(
