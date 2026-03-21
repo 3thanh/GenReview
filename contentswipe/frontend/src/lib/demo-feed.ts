@@ -308,10 +308,5 @@ const DEMO_CARDS: ContentItem[] = [
 export function getSeededDemoCards(persona: Persona): ContentItem[] {
   return DEMO_CARDS
     .filter((card) => persona.contentTypes.includes(card.content_type))
-    .map(cloneCard)
-    .sort(
-      (a, b) =>
-        new Date(a.created_at ?? 0).getTime() -
-        new Date(b.created_at ?? 0).getTime()
-    );
+    .map(cloneCard);
 }

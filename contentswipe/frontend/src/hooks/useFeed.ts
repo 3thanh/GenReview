@@ -50,7 +50,7 @@ interface FeedCachePayload {
 }
 
 const FEED_CACHE_KEY_PREFIX = "contentswipe.feed.v1";
-const DEMO_FEED_CACHE_KEY_PREFIX = "contentswipe.demoFeed.v4";
+const DEMO_FEED_CACHE_KEY_PREFIX = "contentswipe.demoFeed.v5";
 
 function insertSorted(cards: ContentItem[], nextCard: ContentItem): ContentItem[] {
   const next = [...cards.filter((card) => card.id !== nextCard.id), nextCard];
@@ -148,15 +148,8 @@ function readDemoFeedCache(persona: Persona): ContentItem[] {
       return getSeededDemoCards(persona);
     }
 
-    const cached = parsed.cards
-      .filter(isContentItemLike)
-      .sort(
-        (a, b) =>
-          new Date(a.created_at ?? 0).getTime() -
-          new Date(b.created_at ?? 0).getTime()
-      );
+    const cached = parsed.cards.filter(isContentItemLike);
 
-    // If the cached deck is depleted, reset to full seeded deck
     if (cached.length === 0) {
       return getSeededDemoCards(persona);
     }
