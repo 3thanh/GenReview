@@ -637,41 +637,7 @@ export function Studio({
     <div className="flex h-[calc(100vh-9rem)] bg-[linear-gradient(180deg,rgba(255,255,255,0.26),rgba(255,255,255,0.12))]">
       {sidebarOpen && (
         <div className="flex w-80 flex-col border-r border-slate-200/80 bg-white/48 backdrop-blur-xl xl:w-96">
-          <div className="border-b border-slate-200/80 p-4">
-            <button
-              onClick={() => {
-                void createSession();
-              }}
-              disabled={!businessId || loadingSessions}
-              className="surface-pill flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-white"
-            >
-              <Plus className="h-4 w-4" />
-              New Session
-            </button>
-          </div>
-
           <div className="flex-1 overflow-y-auto">
-            <div className="border-b border-slate-200/80 px-4 py-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Sessions
-              </p>
-              <div className="space-y-1.5">
-                {sessions.map((session) => (
-                  <button
-                    key={session.id}
-                    onClick={() => setActiveSessionId(session.id)}
-                    className={`w-full rounded-[22px] px-4 py-3 text-left text-sm transition-colors ${
-                      session.id === activeSessionId
-                        ? "bg-slate-900 text-white shadow-[0_16px_32px_rgba(15,23,42,0.16)]"
-                        : "text-slate-500 hover:bg-white hover:text-slate-900"
-                    }`}
-                  >
-                    {session.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="border-b border-slate-200/80 px-4 py-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
