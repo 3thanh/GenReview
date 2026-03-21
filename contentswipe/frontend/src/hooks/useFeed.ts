@@ -353,7 +353,7 @@ export function useFeed(persona: Persona, sourceMode: FeedSourceMode): UseFeedRe
             cardSnapshot: card,
           });
           if (undoStack.current.length > 50) undoStack.current.shift();
-          setCards((prev) => [prev[prev.length - 1], ...prev.slice(0, -1)]);
+          setCards((prev) => [...prev.slice(1), prev[0]]);
         } else {
           undoStack.current.push({
             cardId: card.id,

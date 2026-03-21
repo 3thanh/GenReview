@@ -44,7 +44,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const videoRef = useRef<HTMLVideoElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [muted, setMuted] = useState(true);
+    const [muted, setMuted] = useState(false);
     const [volume, setVolume] = useState(0.8);
     const [fullscreen, setFullscreen] = useState(false);
     const [scriptOpen, setScriptOpen] = useState(false);
@@ -88,7 +88,13 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       if (!video || !card.video_url) return;
 
       if (isPlaying) {
-        void video.play().catch(() => {});
+        video.play().catch(() => {
+          if (!video.muted) {
+            video.muted = true;
+            setMuted(true);
+            void video.play().catch(() => {});
+          }
+        });
         return;
       }
 
@@ -98,7 +104,6 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     useEffect(() => {
       setCurrentTime(0);
       setDuration(0);
-      setMuted(true);
       setScriptOpen(false);
       setEditing(false);
       setEditedScript(card.script ?? "");
