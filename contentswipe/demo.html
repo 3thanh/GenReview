@@ -622,6 +622,8 @@ function renderPersonaStrip() {
 }
 
 function switchPersona(p) {
+  if (animating) return;
+  closeFeedback();
   currentPersona = p;
   queue = DEMO_CARDS.filter(c => p.types.includes(c.content_type) && c.status === "pending");
 
@@ -743,7 +745,7 @@ function renderSupportCard(card, cls, biz) {
       </div>
       <span class="confidence ${confClass}">${confLabel}</span>
     </div>
-    <div class="conversation-thread" id="conv-thread">${messagesHtml}</div>
+    <div class="conversation-thread">${messagesHtml}</div>
     ${draftHtml}
     <div class="scroll-hint">↑ ↓ scroll conversation</div>
   </div>`;
@@ -789,7 +791,7 @@ function renderActionBar() {
 // ── Scroll conversation ────────────────────────────────────────
 
 function scrollConversation(direction) {
-  const thread = document.getElementById("conv-thread");
+  const thread = document.querySelector(".card.active .conversation-thread");
   if (!thread) return;
   const delta = direction === "down" ? 140 : -140;
   thread.scrollBy({ top: delta, behavior: "smooth" });
@@ -843,6 +845,7 @@ function executeSwipe(direction, feedback) {
     indicator.style.opacity = "0";
     renderCards();
     renderActionBar();
+    updateHints();
     updateStats();
     renderPersonaStrip();
     animating = false;
@@ -868,9 +871,14 @@ function undo() {
   const dirMap = { right: "approved", left: "rejected", up: "variants", down: "ideas" };
   stats[dirMap[last.direction]]--;
 
-  queue.unshift(last.card);
+  if (currentPersona.types.includes(last.card.content_type)) {
+    queue.unshift(last.card);
+  } else {
+    queue = DEMO_CARDS.filter(c => currentPersona.types.includes(c.content_type) && c.status === "pending");
+  }
   renderCards();
   renderActionBar();
+  updateHints();
   updateStats();
   renderPersonaStrip();
   showToast(`Restored: ${last.card.title}`, "#a1a1aa");
@@ -881,10 +889,13 @@ function undo() {
 function openFeedback(direction) {
   const label = currentPersona.labels[direction];
   document.getElementById("drawer-title").textContent = `${label} — Add feedback`;
-  document.getElementById("feedback-input").value = "";
+  const input = document.getElementById("feedback-input");
+  input.value = "";
+  input.style.borderColor = "";
+  input.setAttribute("placeholder", "What should change?");
   document.getElementById("feedback-overlay").classList.add("open");
   document.getElementById("feedback-drawer").classList.add("open");
-  setTimeout(() => document.getElementById("feedback-input").focus(), 350);
+  setTimeout(() => input.focus(), 350);
 }
 
 function closeFeedback() {
@@ -894,11 +905,16 @@ function closeFeedback() {
 }
 
 function submitFeedback() {
-  const feedback = document.getElementById("feedback-input").value;
+  const feedback = document.getElementById("feedback-input").value.trim();
+  if (!feedback) {
+    document.getElementById("feedback-input").style.borderColor = "var(--red)";
+    document.getElementById("feedback-input").setAttribute("placeholder", "Please add feedback before sending");
+    document.getElementById("feedback-input").focus();
+    return;
+  }
+  const dir = pendingDirection;
   closeFeedback();
-  if (pendingDirection) {
-    const dir = pendingDirection;
-    pendingDirection = null;
+  if (dir) {
     executeSwipe(dir, feedback);
   }
 }
