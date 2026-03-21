@@ -62,19 +62,19 @@ function FeedPreviewSlice({
   const cropClass = side === "left" ? "bg-[82%_center]" : "bg-[18%_center]";
   const overlayClass =
     side === "left"
-      ? "bg-gradient-to-r from-black/80 via-black/55 to-transparent"
-      : "bg-gradient-to-l from-black/80 via-black/55 to-transparent";
+      ? "bg-gradient-to-r from-white/95 via-white/70 to-transparent"
+      : "bg-gradient-to-l from-white/95 via-white/70 to-transparent";
 
   const palette = {
-    video: "from-fuchsia-500/30 via-zinc-900/70 to-zinc-950",
-    social: "from-sky-500/25 via-zinc-900/70 to-zinc-950",
-    support: "from-amber-400/20 via-zinc-900/70 to-zinc-950",
+    video: "from-sky-100 via-white to-indigo-50",
+    social: "from-cyan-100 via-white to-blue-50",
+    support: "from-amber-50 via-white to-orange-50",
   }[card.content_type];
 
   return (
     <div
       aria-hidden="true"
-      className={`hidden h-full w-[72px] shrink-0 overflow-hidden rounded-[32px] border border-zinc-800/70 bg-zinc-900/90 shadow-[0_24px_60px_rgba(0,0,0,0.35)] lg:flex xl:w-[88px] ${alignClass}`}
+      className={`surface-panel hidden h-full w-[82px] shrink-0 overflow-hidden rounded-[32px] lg:flex xl:w-[98px] ${alignClass}`}
     >
       <div className="relative h-full w-full overflow-hidden rounded-[28px]">
         {previewImage ? (
@@ -87,10 +87,10 @@ function FeedPreviewSlice({
         )}
         <div className={`absolute inset-0 ${overlayClass}`} />
         <div className={`absolute inset-x-0 bottom-0 p-4 ${textAlignClass}`}>
-          <p className="text-[10px] uppercase tracking-[0.24em] text-zinc-400">
+          <p className="text-[10px] uppercase tracking-[0.24em] text-slate-400">
             {card.content_type}
           </p>
-          <p className="mt-2 line-clamp-4 text-sm font-medium leading-tight text-white/88 [writing-mode:vertical-rl] [text-orientation:mixed]">
+          <p className="mt-2 line-clamp-4 text-sm font-semibold leading-tight text-slate-700/90 [writing-mode:vertical-rl] [text-orientation:mixed]">
             {card.title}
           </p>
         </div>
@@ -140,20 +140,22 @@ export function SwipeFeed({
     {
       label: "Remaining",
       value: queueLength,
-      valueClassName: "text-zinc-100",
-      surfaceClassName: "border-zinc-800 bg-zinc-950/80",
+      valueClassName: "text-slate-900",
+      surfaceClassName: "surface-card",
     },
     {
       label: "Approved",
       value: stats.approved,
       valueClassName: "text-approve",
-      surfaceClassName: "border-emerald-500/30 bg-emerald-500/10",
+      surfaceClassName:
+        "border border-emerald-200 bg-emerald-50/90 shadow-[0_16px_40px_rgba(16,185,129,0.08)]",
     },
     {
       label: "Rejected",
       value: stats.rejected,
       valueClassName: "text-reject",
-      surfaceClassName: "border-rose-500/30 bg-rose-500/10",
+      surfaceClassName:
+        "border border-rose-200 bg-rose-50/90 shadow-[0_16px_40px_rgba(244,63,94,0.08)]",
     },
   ];
 
@@ -250,28 +252,24 @@ export function SwipeFeed({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[80vh]">
-        <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
-      {/* Header stats + persona */}
-      <div className="flex flex-wrap items-start justify-between gap-4 px-4 py-3 sm:px-5 lg:px-8">
-        <div className="space-y-3">
+    <div className="flex h-[calc(100vh-7rem)] flex-col">
+      <div className="flex items-start justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="min-w-0 space-y-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-              Persona Feed
-            </p>
-            <h1 className="mt-1 text-xl font-semibold text-white">
-              Review cards using {persona.name}
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+              Review cards with {persona.name}
             </h1>
-            <p className="mt-1 max-w-xl text-sm text-zinc-400">
+            <p className="mt-1 max-w-xl text-sm leading-5 text-slate-500">
               {feedSourceMode === "demo"
-                ? "Demo mode uses your seeded cached cards so the feed stays full while you present."
-                : "Real mode uses the live Supabase queue and follows the persona configuration from the studio sidebar."}
+                ? "Demo mode — seeded cached cards."
+                : "Live Supabase queue."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -283,16 +281,16 @@ export function SwipeFeed({
             />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
+        <div className="flex shrink-0 items-center gap-2">
           {statCards.map((card) => (
             <div
               key={card.label}
-              className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-full border text-center shadow-[0_12px_40px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:h-24 sm:w-24 ${card.surfaceClassName}`}
+              className={`flex items-center gap-2 rounded-2xl px-3 py-2 ${card.surfaceClassName}`}
             >
-              <span className={`text-2xl font-semibold leading-none sm:text-3xl ${card.valueClassName}`}>
+              <span className={`text-lg font-extrabold leading-none ${card.valueClassName}`}>
                 {card.value}
               </span>
-              <span className="mt-1 max-w-[4.5rem] text-[10px] uppercase tracking-[0.18em] text-zinc-400 sm:text-[11px]">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 {card.label}
               </span>
             </div>
@@ -301,20 +299,19 @@ export function SwipeFeed({
       </div>
 
       {error && (
-        <div className="px-4 pb-2 sm:px-5 lg:px-8">
-          <div className="flex items-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-300" />
+        <div className="px-4 pb-2 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         </div>
       )}
 
-      {/* Card area */}
-      <div className="flex flex-1 items-stretch justify-center overflow-hidden px-3 pb-2 sm:px-5 lg:px-8">
+      <div className="flex flex-1 items-stretch justify-center overflow-hidden px-3 pb-3 sm:px-6 lg:px-8">
         {!currentCard && !loading ? (
           <EmptyState persona={persona} onNavigateToStudio={onNavigateToStudio} />
         ) : (
-          <div className="flex h-full w-full max-w-[min(98vw,1680px)] items-center justify-center gap-3 xl:gap-5">
+          <div className="surface-panel flex h-full w-full max-w-[min(98vw,1680px)] items-center justify-center gap-3 overflow-hidden rounded-[36px] p-3 sm:p-4 xl:gap-5 xl:p-5">
             {leftPreviewCard && <FeedPreviewSlice card={leftPreviewCard} side="left" />}
 
             <AnimatePresence mode="popLayout" custom={exitDirection}>
@@ -345,7 +342,6 @@ export function SwipeFeed({
         )}
       </div>
 
-      {/* Action bar */}
       {currentCard && (
         <ActionBar
           persona={persona}
@@ -356,7 +352,6 @@ export function SwipeFeed({
         />
       )}
 
-      {/* Feedback drawer */}
       <FeedbackDrawer
         open={drawerOpen}
         direction={pendingDirection}
@@ -370,9 +365,8 @@ export function SwipeFeed({
         onCancel={handleFeedbackCancel}
       />
 
-      {/* Keyboard hints */}
       {currentCard && !drawerOpen && (
-        <div className="flex items-center justify-center gap-4 pb-3 text-[11px] text-zinc-600">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 pb-4 text-[11px] text-slate-400">
           {isSupport ? (
             <>
               <span>← {persona.swipeLabels.left.action.toLowerCase()}</span>

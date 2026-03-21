@@ -148,13 +148,20 @@ function readDemoFeedCache(persona: Persona): ContentItem[] {
       return getSeededDemoCards(persona);
     }
 
-    return parsed.cards
+    const cached = parsed.cards
       .filter(isContentItemLike)
       .sort(
         (a, b) =>
           new Date(a.created_at ?? 0).getTime() -
           new Date(b.created_at ?? 0).getTime()
       );
+
+    // If the cached deck is depleted, reset to full seeded deck
+    if (cached.length === 0) {
+      return getSeededDemoCards(persona);
+    }
+
+    return cached;
   } catch {
     return getSeededDemoCards(persona);
   }
