@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { Star } from "lucide-react";
 import type { ContentItem } from "../types/database";
 import { VideoCard } from "./VideoCard";
 import { SocialCard } from "./SocialCard";
@@ -14,45 +15,57 @@ interface ContentCardProps {
 export const ContentCard = forwardRef<SupportCardHandle, ContentCardProps>(
   function ContentCard({ card, isPlaying, onTogglePlay }, ref) {
     const typeLabel = {
-      video_script: "Video",
-      linkedin_post: "Social",
-      support_reply: "Support",
+      video: "Video",
+      social: "Social",
+      support: "Support",
     }[card.content_type];
 
     const typeBadgeColor = {
-      video_script: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-      linkedin_post: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      support_reply: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      video: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+      social: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+      support: "bg-amber-500/20 text-amber-300 border-amber-500/30",
     }[card.content_type];
 
     return (
       <div className="w-full max-w-lg mx-auto">
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-          {/* Type badge */}
+          {/* Type badge + starred + channel */}
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
-            <span
-              className={`text-xs font-medium px-2.5 py-1 rounded-full border ${typeBadgeColor}`}
-            >
-              {typeLabel}
-            </span>
-            <span className="text-xs text-zinc-500">
-              {card.created_at
-                ? new Date(card.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
-                : ""}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs font-medium px-2.5 py-1 rounded-full border ${typeBadgeColor}`}
+              >
+                {typeLabel}
+              </span>
+              {card.channel && (
+                <span className="text-[10px] text-zinc-500 capitalize">
+                  {card.channel}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {card.starred && (
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              )}
+              <span className="text-xs text-zinc-500">
+                {card.created_at
+                  ? new Date(card.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : ""}
+              </span>
+            </div>
           </div>
 
           {/* Card content by type */}
-          {card.content_type === "video_script" && (
+          {card.content_type === "video" && (
             <VideoCard card={card} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
           )}
-          {card.content_type === "linkedin_post" && <SocialCard card={card} />}
-          {card.content_type === "support_reply" && <SupportCard ref={ref} card={card} />}
+          {card.content_type === "social" && <SocialCard card={card} />}
+          {card.content_type === "support" && <SupportCard ref={ref} card={card} />}
 
           {/* Variant / lineage indicator */}
           {(card.variant_of || card.parent_id) && (

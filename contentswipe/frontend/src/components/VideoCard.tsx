@@ -24,7 +24,6 @@ export function VideoCard({ card, isPlaying, onTogglePlay }: VideoCardProps) {
 
   return (
     <div className="px-5 pb-4">
-      {/* Video player or placeholder */}
       {card.video_url ? (
         <div className="relative rounded-xl overflow-hidden bg-black aspect-video mb-4 group">
           <video
@@ -57,12 +56,10 @@ export function VideoCard({ card, isPlaying, onTogglePlay }: VideoCardProps) {
         </div>
       )}
 
-      {/* Title */}
       <h2 className="text-lg font-semibold text-white mb-2 leading-tight">
         {card.title}
       </h2>
 
-      {/* Script preview */}
       {card.script && (
         <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/30">
           <p className="text-xs text-zinc-400 font-medium mb-1.5 uppercase tracking-wider">
@@ -74,10 +71,9 @@ export function VideoCard({ card, isPlaying, onTogglePlay }: VideoCardProps) {
         </div>
       )}
 
-      {/* Description */}
-      {card.description && !card.script && (
+      {card.body_text && !card.script && (
         <p className="text-sm text-zinc-400 leading-relaxed line-clamp-3">
-          {card.description}
+          {card.body_text}
         </p>
       )}
     </div>

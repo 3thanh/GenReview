@@ -8,8 +8,6 @@ import {
   Headphones,
   ChevronRight,
   Sparkles,
-  Upload,
-  Image,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useGenerationJobs } from "../hooks/useFeed";
@@ -24,14 +22,14 @@ interface Message {
   timestamp: number;
 }
 
-interface Session {
+interface StudioSession {
   id: string;
   name: string;
   messages: Message[];
 }
 
 export function Studio() {
-  const [sessions, setSessions] = useState<Session[]>([
+  const [sessions, setSessions] = useState<StudioSession[]>([
     {
       id: "default",
       name: "Default Session",
@@ -40,7 +38,7 @@ export function Studio() {
   ]);
   const [activeSessionId, setActiveSessionId] = useState("default");
   const [input, setInput] = useState("");
-  const [contentType, setContentType] = useState<ContentType>("video_script");
+  const [contentType, setContentType] = useState<ContentType>("video");
   const [generating, setGenerating] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,7 +54,7 @@ export function Studio() {
 
   const createSession = () => {
     const id = crypto.randomUUID();
-    const session: Session = {
+    const session: StudioSession = {
       id,
       name: `Session ${sessions.length + 1}`,
       messages: [],
@@ -91,12 +89,13 @@ export function Studio() {
 
     try {
       const { data: cardData, error: cardErr } = await supabase
-        .from("content_queue")
+        .from("content_items")
         .insert({
           title: prompt.slice(0, 100),
-          description: prompt,
+          body_text: prompt,
           content_type: contentType,
-          status: "pending",
+          review_status: "pending",
+          source_type: "generated",
         } as any)
         .select()
         .single();
@@ -107,7 +106,7 @@ export function Studio() {
       const { data: jobData, error: jobErr } = await supabase
         .from("generation_jobs")
         .insert({
-          content_queue_id: card.id,
+          content_item_id: card.id,
           job_type: "initial",
           prompt,
         })
@@ -117,15 +116,15 @@ export function Studio() {
       const job = jobData as any;
       if (jobErr) throw new Error(jobErr.message);
 
+      const typeLabel = contentType === "video"
+        ? "video"
+        : contentType === "social"
+          ? "social post"
+          : "support reply";
+
       addMessage({
         role: "system",
-        content: `Generation started! Your ${
-          contentType === "video_script"
-            ? "video"
-            : contentType === "linkedin_post"
-              ? "LinkedIn post"
-              : "support reply"
-        } is being created. It will appear in the feed once ready.`,
+        content: `Generation started! Your ${typeLabel} is being created. It will appear in the feed once ready.`,
         jobId: job?.id,
       });
     } catch (e: any) {
@@ -146,14 +145,13 @@ export function Studio() {
   };
 
   const TYPE_OPTIONS: { value: ContentType; label: string; icon: typeof Video }[] = [
-    { value: "video_script", label: "Video", icon: Video },
-    { value: "linkedin_post", label: "LinkedIn", icon: FileText },
-    { value: "support_reply", label: "Support", icon: Headphones },
+    { value: "video", label: "Video", icon: Video },
+    { value: "social", label: "Social", icon: FileText },
+    { value: "support", label: "Support", icon: Headphones },
   ];
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      {/* Sidebar */}
       {sidebarOpen && (
         <div className="w-64 border-r border-zinc-800 flex flex-col bg-zinc-950">
           <div className="p-3 border-b border-zinc-800">
@@ -181,7 +179,6 @@ export function Studio() {
             ))}
           </div>
 
-          {/* Active jobs */}
           {activeJobs.length > 0 && (
             <div className="border-t border-zinc-800 p-3">
               <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-wider mb-2">
@@ -200,9 +197,7 @@ export function Studio() {
         </div>
       )}
 
-      {/* Main chat area */}
       <div className="flex-1 flex flex-col">
-        {/* Toggle sidebar */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-5 h-10 bg-zinc-800 border border-zinc-700/50 rounded-r flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
@@ -213,7 +208,6 @@ export function Studio() {
           />
         </button>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-8">
           {activeSession.messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center">
@@ -244,10 +238,10 @@ export function Studio() {
               >
                 {msg.contentType && msg.role === "user" && (
                   <span className="text-[11px] opacity-60 uppercase tracking-wider block mb-1">
-                    {msg.contentType === "video_script"
+                    {msg.contentType === "video"
                       ? "Video"
-                      : msg.contentType === "linkedin_post"
-                        ? "LinkedIn"
+                      : msg.contentType === "social"
+                        ? "Social"
                         : "Support"}
                   </span>
                 )}
@@ -258,9 +252,7 @@ export function Studio() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
         <div className="border-t border-zinc-800 px-6 py-4">
-          {/* Content type selector */}
           <div className="flex items-center gap-2 mb-3">
             {TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
               <button
@@ -278,7 +270,6 @@ export function Studio() {
             ))}
           </div>
 
-          {/* Text input */}
           <div className="flex items-end gap-3">
             <textarea
               ref={inputRef}

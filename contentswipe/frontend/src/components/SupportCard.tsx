@@ -35,7 +35,11 @@ function formatTime(ts?: string) {
 
 function getConversation(card: ContentItem): ConversationData | null {
   const meta = card.metadata as Record<string, any> | null;
-  if (!meta?.conversation) return null;
+  if (!meta?.conversation) {
+    const bundle = card.source_bundle as Record<string, any> | null;
+    if (bundle?.conversation) return bundle.conversation as ConversationData;
+    return null;
+  }
   return meta.conversation as ConversationData;
 }
 
@@ -64,9 +68,9 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
     const conversation = getConversation(card);
     const customer = conversation?.customer;
     const messages = conversation?.messages ?? [];
-    const draftReply = card.description;
-    const sourceRef = (card.metadata as Record<string, any> | null)?.source_ref as string | undefined;
-    const channel = conversation?.channel ?? "intercom";
+    const draftReply = card.body_text;
+    const sourceRef = card.source_ref;
+    const channel = card.channel ?? conversation?.channel ?? "intercom";
 
     useImperativeHandle(ref, () => ({
       scrollChat(direction: "up" | "down") {
@@ -86,7 +90,6 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
     useEffect(() => {
       const el = scrollRef.current;
       if (!el) return;
-      // Start scrolled to bottom to show latest messages
       el.scrollTop = el.scrollHeight;
       updateScrollState();
     }, [messages.length]);
@@ -103,7 +106,6 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
 
     return (
       <div className="px-4 pb-4">
-        {/* Header: channel + customer */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
@@ -126,10 +128,8 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
           )}
         </div>
 
-        {/* Conversation thread */}
         {hasThread ? (
           <div className="relative mb-3">
-            {/* Scroll fade top */}
             {canScrollUp && (
               <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-zinc-900 to-transparent z-10 pointer-events-none flex items-start justify-center pt-0.5">
                 <ChevronUp className="w-3.5 h-3.5 text-zinc-500 animate-pulse" />
@@ -146,7 +146,6 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
               ))}
             </div>
 
-            {/* Scroll fade bottom */}
             {canScrollDown && (
               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-zinc-900 to-transparent z-10 pointer-events-none flex items-end justify-center pb-0.5">
                 <ChevronDown className="w-3.5 h-3.5 text-zinc-500 animate-pulse" />
@@ -154,11 +153,10 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
             )}
           </div>
         ) : (
-          /* Fallback: screenshot if no thread data */
-          card.thumbnail_url && (
+          (card.image_url || card.thumbnail_url) && (
             <div className="rounded-xl overflow-hidden border border-zinc-700/30 mb-3">
               <img
-                src={card.thumbnail_url}
+                src={card.image_url ?? card.thumbnail_url!}
                 alt="Support context"
                 className="w-full object-cover max-h-48"
               />
@@ -166,7 +164,6 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
           )
         )}
 
-        {/* AI Draft Response — the reviewable content */}
         {draftReply && (
           <div className="bg-amber-500/[0.06] rounded-xl p-3.5 border border-amber-500/20 relative">
             <div className="flex items-center gap-1.5 mb-2">
@@ -181,7 +178,6 @@ export const SupportCard = forwardRef<SupportCardHandle, SupportCardProps>(
           </div>
         )}
 
-        {/* Scroll hint */}
         {hasThread && (
           <div className="flex items-center justify-center gap-1 mt-2.5">
             <span className="text-[10px] text-zinc-600">↑ ↓ scroll conversation</span>
@@ -211,7 +207,6 @@ function MessageBubble({
       )}
 
       <div className={`max-w-[80%] ${isCustomer ? "" : "order-first"}`}>
-        {/* Sender name + time */}
         <div className={`flex items-center gap-1.5 mb-0.5 ${isCustomer ? "" : "justify-end"}`}>
           <span className="text-[10px] text-zinc-500">
             {message.sender_name ?? (isCustomer ? customerName ?? "Customer" : "Fin AI")}
@@ -221,7 +216,6 @@ function MessageBubble({
           )}
         </div>
 
-        {/* Bubble */}
         <div
           className={`rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${
             isCustomer

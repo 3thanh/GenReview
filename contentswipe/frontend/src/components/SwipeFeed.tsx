@@ -48,7 +48,7 @@ export function SwipeFeed({ onNavigateToStudio }: SwipeFeedProps) {
 
   const supportCardRef = useRef<SupportCardHandle>(null);
 
-  const isSupport = currentCard?.content_type === "support_reply";
+  const isSupport = currentCard?.content_type === "support";
 
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {

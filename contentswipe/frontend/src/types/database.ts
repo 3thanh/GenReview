@@ -33,64 +33,133 @@ export type Database = {
         };
         Relationships: [];
       };
-      content_queue: {
+      sessions: {
         Row: {
-          business_id: string | null;
-          content_type: Database["public"]["Enums"]["content_type"];
-          created_at: string | null;
-          description: string | null;
-          feedback: string | null;
           id: string;
-          metadata: Json | null;
-          parent_id: string | null;
-          script: string | null;
-          status: Database["public"]["Enums"]["content_status"];
-          thumbnail_url: string | null;
-          title: string;
-          updated_at: string | null;
-          variant_of: string | null;
-          video_url: string | null;
+          business_id: string;
+          name: string;
+          created_at: string | null;
         };
         Insert: {
-          business_id?: string | null;
-          content_type?: Database["public"]["Enums"]["content_type"];
-          created_at?: string | null;
-          description?: string | null;
-          feedback?: string | null;
           id?: string;
-          metadata?: Json | null;
-          parent_id?: string | null;
-          script?: string | null;
-          status?: Database["public"]["Enums"]["content_status"];
-          thumbnail_url?: string | null;
-          title: string;
-          updated_at?: string | null;
-          variant_of?: string | null;
-          video_url?: string | null;
+          business_id: string;
+          name: string;
+          created_at?: string | null;
         };
         Update: {
-          business_id?: string | null;
-          content_type?: Database["public"]["Enums"]["content_type"];
-          created_at?: string | null;
-          description?: string | null;
-          feedback?: string | null;
           id?: string;
-          metadata?: Json | null;
-          parent_id?: string | null;
+          business_id?: string;
+          name?: string;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      content_items: {
+        Row: {
+          id: string;
+          business_id: string | null;
+          session_id: string | null;
+          content_type: Database["public"]["Enums"]["content_type"];
+          channel: string | null;
+          review_mode: string | null;
+          source_type: string | null;
+          title: string;
+          body_text: string | null;
+          script: string | null;
+          image_url: string | null;
+          video_url: string | null;
+          thumbnail_url: string | null;
+          source_ref: string | null;
+          source_bundle: Json | null;
+          prompt_input_summary: string | null;
+          review_status: Database["public"]["Enums"]["review_status"];
+          review_note: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          starred: boolean;
+          down_arrow_designation: string | null;
+          generation_job_id: string | null;
+          generation_status: string | null;
+          model_name: string | null;
+          prompt_template_id: string | null;
+          parent_id: string | null;
+          variant_of: string | null;
+          metadata: Json | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          business_id?: string | null;
+          session_id?: string | null;
+          content_type?: Database["public"]["Enums"]["content_type"];
+          channel?: string | null;
+          review_mode?: string | null;
+          source_type?: string | null;
+          title: string;
+          body_text?: string | null;
           script?: string | null;
-          status?: Database["public"]["Enums"]["content_status"];
-          thumbnail_url?: string | null;
-          title?: string;
-          updated_at?: string | null;
-          variant_of?: string | null;
+          image_url?: string | null;
           video_url?: string | null;
+          thumbnail_url?: string | null;
+          source_ref?: string | null;
+          source_bundle?: Json | null;
+          prompt_input_summary?: string | null;
+          review_status?: Database["public"]["Enums"]["review_status"];
+          review_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          starred?: boolean;
+          down_arrow_designation?: string | null;
+          generation_job_id?: string | null;
+          generation_status?: string | null;
+          model_name?: string | null;
+          prompt_template_id?: string | null;
+          parent_id?: string | null;
+          variant_of?: string | null;
+          metadata?: Json | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          business_id?: string | null;
+          session_id?: string | null;
+          content_type?: Database["public"]["Enums"]["content_type"];
+          channel?: string | null;
+          review_mode?: string | null;
+          source_type?: string | null;
+          title?: string;
+          body_text?: string | null;
+          script?: string | null;
+          image_url?: string | null;
+          video_url?: string | null;
+          thumbnail_url?: string | null;
+          source_ref?: string | null;
+          source_bundle?: Json | null;
+          prompt_input_summary?: string | null;
+          review_status?: Database["public"]["Enums"]["review_status"];
+          review_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          starred?: boolean;
+          down_arrow_designation?: string | null;
+          generation_job_id?: string | null;
+          generation_status?: string | null;
+          model_name?: string | null;
+          prompt_template_id?: string | null;
+          parent_id?: string | null;
+          variant_of?: string | null;
+          metadata?: Json | null;
+          created_at?: string | null;
+          updated_at?: string | null;
         };
         Relationships: [];
       };
       generation_jobs: {
         Row: {
           completed_at: string | null;
-          content_queue_id: string | null;
+          content_item_id: string | null;
           created_at: string | null;
           error_message: string | null;
           id: string;
@@ -101,7 +170,7 @@ export type Database = {
         };
         Insert: {
           completed_at?: string | null;
-          content_queue_id?: string | null;
+          content_item_id?: string | null;
           created_at?: string | null;
           error_message?: string | null;
           id?: string;
@@ -112,7 +181,7 @@ export type Database = {
         };
         Update: {
           completed_at?: string | null;
-          content_queue_id?: string | null;
+          content_item_id?: string | null;
           created_at?: string | null;
           error_message?: string | null;
           id?: string;
@@ -150,31 +219,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      review_events: {
+        Row: {
+          id: string;
+          content_item_id: string;
+          action: string;
+          note: string | null;
+          actor_id: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          content_item_id: string;
+          action: string;
+          note?: string | null;
+          actor_id?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          content_item_id?: string;
+          action?: string;
+          note?: string | null;
+          actor_id?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
-      content_status:
-        | "pending"
-        | "approved"
-        | "rejected"
-        | "needs_variant"
-        | "needs_ideas";
-      content_type: "video_script" | "linkedin_post" | "support_reply";
+      review_status: "pending" | "approved" | "rejected" | "needs_edit";
+      content_type: "support" | "social" | "video";
     };
     CompositeTypes: Record<string, never>;
   };
 };
 
-export type ContentStatus = Database["public"]["Enums"]["content_status"];
+export type ReviewStatus = Database["public"]["Enums"]["review_status"];
 export type ContentType = Database["public"]["Enums"]["content_type"];
-export type ContentItem =
-  Database["public"]["Tables"]["content_queue"]["Row"];
-export type ContentInsert =
-  Database["public"]["Tables"]["content_queue"]["Insert"];
-export type GenerationJob =
-  Database["public"]["Tables"]["generation_jobs"]["Row"];
+export type ContentItem = Database["public"]["Tables"]["content_items"]["Row"];
+export type ContentItemInsert = Database["public"]["Tables"]["content_items"]["Insert"];
+export type GenerationJob = Database["public"]["Tables"]["generation_jobs"]["Row"];
 export type Business = Database["public"]["Tables"]["businesses"]["Row"];
+export type Session = Database["public"]["Tables"]["sessions"]["Row"];
 
 export type SwipeDirection = "right" | "left" | "up" | "down";
 
@@ -202,12 +291,12 @@ export const PERSONAS: Persona[] = [
     name: "Everything",
     description: "All content types in a single feed",
     icon: "layers",
-    contentTypes: ["video_script", "linkedin_post", "support_reply"],
+    contentTypes: ["support", "social", "video"],
     swipeLabels: {
       right: { action: "Approve", shortcut: "→", color: "#22c55e", requiresFeedback: false },
       left: { action: "Reject", shortcut: "←", color: "#ef4444", requiresFeedback: true },
       up: { action: "Request Variant", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
-      down: { action: "More Ideas", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
+      down: { action: "Star", shortcut: "↓", color: "#f59e0b", requiresFeedback: false },
     },
     emptyStateMessage: "Nothing to review right now",
     emptyStateCta: "Create something new",
@@ -217,12 +306,12 @@ export const PERSONAS: Persona[] = [
     name: "Content Creator",
     description: "Review AI-generated video scripts and social posts",
     icon: "video",
-    contentTypes: ["video_script", "linkedin_post"],
+    contentTypes: ["video", "social"],
     swipeLabels: {
       right: { action: "Approve", shortcut: "→", color: "#22c55e", requiresFeedback: false },
       left: { action: "Reject", shortcut: "←", color: "#ef4444", requiresFeedback: true },
       up: { action: "Request Variant", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
-      down: { action: "More Ideas", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
+      down: { action: "Star", shortcut: "↓", color: "#f59e0b", requiresFeedback: false },
     },
     emptyStateMessage: "No content to review",
     emptyStateCta: "Create your first video",
@@ -232,12 +321,12 @@ export const PERSONAS: Persona[] = [
     name: "Support Agent",
     description: "Triage and respond to support tickets",
     icon: "headset",
-    contentTypes: ["support_reply"],
+    contentTypes: ["support"],
     swipeLabels: {
       right: { action: "Send Reply", shortcut: "→", color: "#22c55e", requiresFeedback: false },
       left: { action: "Discard", shortcut: "←", color: "#ef4444", requiresFeedback: true },
-      up: { action: "Escalate", shortcut: "↑", color: "#f59e0b", requiresFeedback: true },
-      down: { action: "Use Template", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
+      up: { action: "Escalate", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
+      down: { action: "Star", shortcut: "↓", color: "#f59e0b", requiresFeedback: false },
     },
     emptyStateMessage: "Inbox zero — no tickets to review",
     emptyStateCta: "Check back later",
@@ -245,14 +334,14 @@ export const PERSONAS: Persona[] = [
   {
     id: "social-manager",
     name: "Social Manager",
-    description: "Review and schedule LinkedIn posts",
+    description: "Review and schedule social content",
     icon: "share",
-    contentTypes: ["linkedin_post"],
+    contentTypes: ["social"],
     swipeLabels: {
       right: { action: "Schedule", shortcut: "→", color: "#22c55e", requiresFeedback: false },
       left: { action: "Skip", shortcut: "←", color: "#ef4444", requiresFeedback: false },
       up: { action: "Edit & Rewrite", shortcut: "↑", color: "#a855f7", requiresFeedback: true },
-      down: { action: "Generate Alternatives", shortcut: "↓", color: "#3b82f6", requiresFeedback: true },
+      down: { action: "Star", shortcut: "↓", color: "#f59e0b", requiresFeedback: false },
     },
     emptyStateMessage: "No posts to review",
     emptyStateCta: "Draft a new post",
