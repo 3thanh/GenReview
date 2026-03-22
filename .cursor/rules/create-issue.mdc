@@ -1,6 +1,6 @@
 ---
 description: Capture bugs/features fast while mid-development
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Create Issue

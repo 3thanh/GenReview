@@ -1,6 +1,6 @@
 ---
 description: Update documentation after code changes
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Update Documentation Task

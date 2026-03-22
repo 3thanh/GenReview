@@ -1,6 +1,6 @@
 ---
 description: Shift into teaching mode when you encounter something you don't understand
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Learning Opportunity
