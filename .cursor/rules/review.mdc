@@ -1,6 +1,6 @@
 ---
 description: Comprehensive code review
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Code Review Task

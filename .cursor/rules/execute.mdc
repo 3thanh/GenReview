@@ -1,6 +1,6 @@
 ---
 description: Implement the plan step by step
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Execute

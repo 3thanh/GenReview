@@ -1,6 +1,6 @@
 ---
 description: Critically evaluate peer review findings from another model
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Peer Review Evaluation

@@ -1,6 +1,6 @@
 ---
 description: Generate a markdown execution plan with status tracking
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Plan Creation Stage
