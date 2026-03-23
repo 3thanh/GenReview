@@ -1,9 +1,0 @@
-audio_segments/
-audio_segments_terracotta/
-video_segments/
-video_segments_terracotta/
-output/*.mp4
-output/*.wav
-output/qc_*.png
-output/tc_qc_*.png
-source_assets/*.wav
